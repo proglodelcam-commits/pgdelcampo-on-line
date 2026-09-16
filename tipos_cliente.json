@@ -1,0 +1,51 @@
+{
+  "particular": {
+    "codigo": "particular",
+    "nombre": "Cliente Particular",
+    "descripcion": "Cliente final que compra para consumo propio",
+    "descuento_compra": true,
+    "descuento_fidelidad": true,
+    "credito_disponible": true,
+    "tienda_online": true,
+    "envio_domicilio": true,
+    "icono": "person",
+    "color": "#1b382b"
+  },
+  "comercio": {
+    "codigo": "comercio",
+    "nombre": "Comercio",
+    "descripcion": "Tienda o negocio minorista que revende productos PG",
+    "descuento_compra": true,
+    "descuento_fidelidad": false,
+    "credito_disponible": true,
+    "tienda_online": true,
+    "envio_domicilio": true,
+    "icono": "store",
+    "color": "#c8963e"
+  },
+  "distribuidor": {
+    "codigo": "distribuidor",
+    "nombre": "Distribuidor",
+    "descripcion": "Distribuidor mayorista con volumen de compra elevado",
+    "descuento_compra": true,
+    "descuento_fidelidad": false,
+    "credito_disponible": true,
+    "tienda_online": true,
+    "envio_domicilio": true,
+    "icono": "truck",
+    "color": "#8eb057"
+  },
+  "a_domicilio": {
+    "codigo": "a_domicilio",
+    "nombre": "Cliente a Domicilio",
+    "descripcion": "Cliente que recibe el pedido en su dirección (envío C$20.00 en zonas de cobertura)",
+    "descuento_compra": true,
+    "descuento_fidelidad": true,
+    "credito_disponible": false,
+    "tienda_online": true,
+    "envio_domicilio": true,
+    "costo_envio_automatico": true,
+    "icono": "home",
+    "color": "#17577f"
+  }
+}

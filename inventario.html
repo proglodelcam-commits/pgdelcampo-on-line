@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Inventario | Productos Globales del Campo</title>
+  <style>
+    :root {
+      --verde-principal: #1b382b;
+      --verde-suave: #2a523e;
+      --dorado: #c8963e;
+      --rojo: #d32f2f;
+      --fondo-claro: #f4f4f6;
+      --texto-oscuro: #2c2c2c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background-color: var(--fondo-claro);
+      color: var(--texto-oscuro);
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--verde-principal);
+      color: #fff;
+      padding: 16px 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    header h1 { font-size: 18px; }
+    header a { color: var(--dorado); text-decoration: none; font-weight: bold; font-size: 13px; }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 800px) {
+      .grid-layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid #eef0ef;
+    }
+
+    .card h2 {
+      font-size: 15px;
+      color: var(--verde-principal);
+      border-bottom: 2px solid var(--verde-principal);
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 4px; color: #444; }
+    .form-group input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .btn {
+      background: var(--verde-principal);
+      color: #ffffff;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--verde-suave); }
+    .btn-secondary { background: #666; margin-top: 6px; }
+    .btn-inicial { background: var(--dorado); color: #000; font-weight: bold; margin-bottom: 14px; }
+
+    /* TABLA DE INVENTARIO */
+    .table-responsive { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      background: #eef2f0;
+      color: var(--verde-principal);
+      text-align: left;
+      padding: 10px;
+      font-size: 11px;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+
+    .badge-stock {
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 11px;
+    }
+    .stock-ok { background: #d4edda; color: #155724; }
+    .stock-low { background: #fff3cd; color: #856404; }
+    .stock-out { background: #f8d7da; color: #721c24; }
+
+    .action-btn {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      margin-right: 4px;
+    }
+    .btn-edit { background: #e0f2fe; color: #0369a1; }
+    .btn-del { background: #fee2e2; color: #991b1b; }
+    .btn-qty { background: #f3f4f6; color: #374151; font-weight: bold; padding: 2px 6px; }
+
+    .status-bar {
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .status-success { background: #d1e7dd; color: #0f5132; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div>
+        <h1>Control de Inventario</h1>
+        <span style="font-size: 11px; opacity: 0.8;">Productos Globales del Campo</span>
+      </div>
+      <a href="panel-administrativo.html" class="btn-panel">
+  ⚙️ Panel Administrativo
+</a>
+    </header>
+
+    <div id="status-message" class="status-bar status-success"></div>
+
+    <div class="grid-layout">
+      
+      <!-- FORMULARIO DE PRODUCTO -->
+      <div class="card">
+        <h2 id="form-title">Agregar Nuevo Producto</h2>
+        
+        <form id="product-form">
+          <input type="hidden" id="prod-id">
+
+          <div class="form-group">
+            <label>Nombre del Producto *</label>
+            <input type="text" id="prod-nombre" placeholder="Ej. Café Clásico 400 gr" required>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción Breve</label>
+            <input type="text" id="prod-desc" placeholder="Ej. Tueste e intensidad balanceada">
+          </div>
+
+          <div class="form-group">
+            <label>Precio de Venta (C$) *</label>
+            <input type="number" step="0.50" id="prod-precio" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group">
+            <label>Existencia / Stock Inicial *</label>
+            <input type="number" id="prod-stock" placeholder="0" value="50" required>
+          </div>
+
+          <button type="submit" class="btn" id="btn-save">💾 Guardar Producto</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancel" style="display:none;" onclick="resetForm()">Cancelar Edición</button>
+        </form>
+      </div>
+
+      <!-- LISTA Y TABLA DE INVENTARIO -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h2>Catálogo Activo en Nube</h2>
+          <button class="btn btn-inicial" style="width: auto; padding: 6px 12px;" onclick="cargarCatalogoInicial()">⚡ Cargar Catálogo Base</button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Ajuste</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body">
+              <tr>
+                <td colspan="5" style="text-align: center; color: #888;">Cargando inventario desde Firebase...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONEXIÓN MÓDULO FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // ⚙️ CONFIGURA AQUÍ TUS CREDENCIALES DE FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyBfPmfE6axd_W0Z80b0L-Jbjy6q7l9_NTk",
+  authDomain: "productos-globales-campo.firebaseapp.com",
+  databaseURL: "https://productos-globales-campo-default-rtdb.firebaseio.com",
+  projectId: "productos-globales-campo",
+  storageBucket: "productos-globales-campo.firebasestorage.app",
+  messagingSenderId: "938958452862",
+  appId: "1:938958452862:web:3b618567dae9aa01b7c02f",
+  measurementId: "G-MKD9T10DP3"
+};
+let productosData = {};
+    let clientesData = {};
+
+    // Detecta si las credenciales siguen siendo el placeholder
+    const esConfigPlaceholder = firebaseConfig.apiKey === "TU_API_KEY";
+
+    if (esConfigPlaceholder) {
+      document.getElementById('config-warning').style.display = 'block';
+      document.getElementById('clientes-table-body').innerHTML =
+        '<tr><td colspan="5" style="text-align: center; color: #888;">Configura Firebase para ver los datos de clientes.</td></tr>';
+      document.getElementById('inventory-table-body').innerHTML =
+        '<tr><td colspan="6" style="text-align: center; color: #888;">Configura Firebase para ver el inventario.</td></tr>';
+    }
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const productosRef = ref(db, 'productos');
+    let listaProductos = {};
+
+    // 1. ESCUCHAR CAMBIOS EN TIEMPO REAL
+    onValue(productosRef, (snapshot) => {
+      listaProductos = snapshot.val() || {};
+      renderTabla(listaProductos);
+    });
+
+    // 2. RENDERIZAR TABLA DE PRODUCTOS
+    function renderTabla(data) {
+      const tbody = document.getElementById('inventory-table-body');
+      tbody.innerHTML = '';
+
+      const keys = Object.keys(data);
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #888;">No hay productos registrados. Presiona "Cargar Catálogo Base" para iniciar.</td></tr>`;
+        return;
+      }
+
+      keys.forEach(key => {
+        const p = data[key];
+        const stockClass = p.stock > 15 ? 'stock-ok' : (p.stock > 0 ? 'stock-low' : 'stock-out');
+
+        tbody.innerHTML += `
+          <tr>
+            <td>
+              <strong>${p.nombre}</strong><br>
+              <small style="color:#777;">${p.desc || ''}</small>
+            </td>
+            <td><strong>C$ ${parseFloat(p.precio).toFixed(2)}</strong></td>
+            <td><span class="badge-stock ${stockClass}">${p.stock} uds</span></td>
+            <td>
+              <button class="action-btn btn-qty" onclick="modificarStock('${key}', ${p.stock - 1})">-1</button>
+              <button class="action-btn btn-qty" onclick="modificarStock('${key}', ${p.stock + 1})">+1</button>
+            </td>
+            <td>
+              <button class="action-btn btn-edit" onclick="prepararEdicion('${key}')">✏️ Edit</button>
+              <button class="action-btn btn-del" onclick="eliminarProducto('${key}')">🗑️</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // 3. GUARDAR / EDITAR PRODUCTO
+    document.getElementById('product-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('prod-id').value || 'prod_' + Date.now();
+      const nombre = document.getElementById('prod-nombre').value;
+      const desc = document.getElementById('prod-desc').value;
+      const precio = parseFloat(document.getElementById('prod-precio').value);
+      const stock = parseInt(document.getElementById('prod-stock').value);
+
+      set(ref(db, 'productos/' + id), {
+        nombre,
+        desc,
+        precio,
+        stock
+      }).then(() => {
+        mostrarNotificacion('Producto guardado correctamente');
+        resetForm();
+      }).catch(err => alert('Error al guardar: ' + err.message));
+    });
+
+    // 4. PREPARAR EDICIÓN
+    window.prepararEdicion = function(key) {
+      const p = listaProductos[key];
+      if (!p) return;
+
+      document.getElementById('prod-id').value = key;
+      document.getElementById('prod-nombre').value = p.nombre;
+      document.getElementById('prod-desc').value = p.desc || '';
+      document.getElementById('prod-precio').value = p.precio;
+      document.getElementById('prod-stock').value = p.stock;
+
+      document.getElementById('form-title').innerText = 'Editar Producto';
+      document.getElementById('btn-save').innerText = '🔄 Actualizar Producto';
+      document.getElementById('btn-cancel').style.display = 'block';
+    };
+
+    window.resetForm = function() {
+      document.getElementById('product-form').reset();
+      document.getElementById('prod-id').value = '';
+      document.getElementById('form-title').innerText = 'Agregar Nuevo Producto';
+      document.getElementById('btn-save').innerText = '💾 Guardar Producto';
+      document.getElementById('btn-cancel').style.display = 'none';
+    };
+
+    // 5. AJUSTAR STOCK RÁPIDO (+1 / -1)
+    window.modificarStock = function(key, nuevoStock) {
+      if (nuevoStock < 0) return;
+      update(ref(db, 'productos/' + key), { stock: nuevoStock });
+    };
+
+    // 6. ELIMINAR PRODUCTO
+    window.eliminarProducto = function(key) {
+      if (confirm('¿Estás seguro de eliminar este producto del inventario?')) {
+        remove(ref(db, 'productos/' + key));
+      }
+    };
+
+    // 7. CARGAR CATÁLOGO INICIAL DE PRODUCTOS GLOBALES DEL CAMPO
+    window.cargarCatalogoInicial = function() {
+      if (!confirm('Esto cargará el catálogo predeterminado de cafés y pinol. ¿Deseas continuar?')) return;
+
+      const catalogoInicial = {
+        "prod_1": { nombre: "Café Clásico del Campo 100 gr", desc: "Tueste e intensidad balanceada", precio: 45.50, stock: 50 },
+        "prod_2": { nombre: "Café Clásico del Campo 200 gr", desc: "Tueste e intensidad balanceada", precio: 72.30, stock: 50 },
+        "prod_3": { nombre: "Café Clásico del Campo 400 gr", desc: "Tueste e intensidad balanceada", precio: 173.00, stock: 50 },
+        "prod_4": { nombre: "Café Clásico Toledo 400 gr", desc: "Grano seleccionado tradicional", precio: 170.00, stock: 40 },
+        "prod_5": { nombre: "Café Especial Toledo 400 gr", desc: "Tueste especial de la casa", precio: 190.00, stock: 30 },
+        "prod_6": { nombre: "Café Premium del Campo 400 gr", desc: "Edición especial grano seleccionado", precio: 165.00, stock: 35 },
+        "prod_7": { nombre: "Café Tradicional Bolsa Trans 400 gr", desc: "Presentación artesanal", precio: 117.00, stock: 40 },
+        "prod_8": { nombre: "Café del Campo Bolsón (16 x 25 gr)", desc: "Empaque familiar dosificado", precio: 145.00, stock: 25 },
+        "prod_9": { nombre: "Café del Campo 200 gr", desc: "Aroma y sabor tradicional", precio: 63.50, stock: 50 },
+        "prod_10": { nombre: "Café del Campo 400 gr", desc: "Aroma y sabor tradicional", precio: 130.00, stock: 50 },
+        "prod_11": { nombre: "Pinol del Campo 400 gr", desc: "Maíz tostado tradicional", precio: 45.00, stock: 60 }
+      };
+
+      set(ref(db, 'productos'), catalogoInicial)
+        .then(() => mostrarNotificacion('Catálogo inicial cargado con éxito en Firebase'))
+        .catch(err => alert('Error: ' + err.message));
+    };
+
+    function mostrarNotificacion(msg) {
+      const el = document.getElementById('status-message');
+      el.innerText = '✅ ' + msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 3000);
+    }
+  </script>
+
+</body>
+</html>

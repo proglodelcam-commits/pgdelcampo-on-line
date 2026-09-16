@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f6f4; }
+    #chat-container { max-width: 100%; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 15px; border: 1px solid #e1e8e1; }
+    #header-bot { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 2px solid #2d5a27; padding-bottom: 8px; }
+    #header-bot h3 { margin: 0; color: #2d5a27; font-size: 16px; }
+    #header-bot span { font-size: 11px; color: #777; background: #e2f0d9; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+    #historial { height: 300px; overflow-y: auto; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
+    .mensaje { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: pre-line; }
+    .usuario { background-color: #2d5a27; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .ia { background-color: #eaefe9; color: #233e20; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #d3ded2; }
+    #input-area { display: flex; gap: 8px; }
+    #texto { flex-grow: 1; padding: 10px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; outline: none; }
+    #texto:focus { border-color: #2d5a27; }
+    #btn-enviar { background-color: #2d5a27; color: white; border: none; padding: 0 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    #btn-enviar:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<div id="chat-container">
+  <div id="header-bot">
+    <h3><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 2V4M12 20V22M4 12H2M22 12H20" stroke="#0080FF" stroke-width="2" stroke-linecap="round"/>
+  <rect x="5" y="6" width="14" height="12" rx="3" fill="#1E293B" stroke="#0080FF" stroke-width="2"/>
+  <circle cx="9" cy="11" r="1.5" fill="#00E5FF"/>
+  <circle cx="15" cy="11" r="1.5" fill="#00E5FF"/>
+  <path d="M9 15H15" stroke="#00E5FF" stroke-width="1.5" stroke-linecap="round"/>
+</svg> </i> BotsPG</h3>
+    <span>Asistente Virtual</span>
+  </div>
+  <div id="historial">
+    <div class="mensaje ia">¡Hola! Soy <b>BotsPG</b>, asistente de Productos Globales del Campo. ¿En qué te puedo asesorar hoy? Ofrecemos café de altura, pinolillo, abono orgánico y envíos en la zona de Carazo.</div>
+  </div>
+  <div id="input-area">
+    <input type="text" id="texto" placeholder="Pregúntame por precios, productos o presupuestos..." onkeypress="evaluarTecla(event)">
+    <button id="btn-enviar" onclick="enviarMensaje()">Enviar</button>
+  </div>
+</div>
+
+<script>
+  // ⚠️ REEMPLAZA ESTA URL CON LA QUE DA GOOGLE APPS SCRIPT AL IMPLEMENTAR (Termina en /exec)
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw_noGu_yhskgRFZqY3dYWSfvIFssfjYgICcJUXfj3zyR7ocUbYeuz0tT0mxomZPrfI/exec";
+
+  async function enviarMensaje() {
+    const input = document.getElementById("texto");
+    const historial = document.getElementById("historial");
+    const btn = document.getElementById("btn-enviar");
+    const mensaje = input.value.trim();
+    
+    if (!mensaje) return;
+
+    // Mensaje de Usuario
+    historial.innerHTML += `<div class="mensaje usuario">${mensaje}</div>`;
+    input.value = "";
+    historial.scrollTop = historial.scrollHeight;
+
+    // Bloquear app mientras procesa
+    btn.disabled = true;
+    const msgCarga = document.createElement("div");
+    msgCarga.className = "mensaje ia";
+    msgCarga.innerHTML = "<i>Analizando solicitud central...</i>";
+    historial.appendChild(msgCarga);
+    historial.scrollTop = historial.scrollHeight;
+
+    try {
+      // Petición avanzada para evitar bloqueos proxy en Google Sites
+      const response = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" }, // Evita pre-flight OPTIONS CORS
+        body: JSON.stringify({ mensaje: mensaje })
+      });
+
+      const datos = await response.json();
+      
+      if (datos && datos.respuesta) {
+        msgCarga.innerHTML = datos.respuesta;
+      } else {
+        msgCarga.innerHTML = "Disculpa, tuvimos un inconveniente al procesar la respuesta. Por favor, intenta de nuevo.";
+      }
+    } catch (error) {
+      msgCarga.innerHTML = "<b>Aviso de conexión:</b> No se logró enlazar con el puente de Jinotepe. Por favor verifica la publicación.";
+    }
+
+    btn.disabled = false;
+    historial.scrollTop = historial.scrollHeight;
+  }
+
+  function evaluarTecla(e) {
+    if (e.key === 'Enter') enviarMensaje();
+  }
+</script>
+
+</body>
+</html>

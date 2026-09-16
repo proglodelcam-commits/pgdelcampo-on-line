@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PG del Campo — Panel Integral</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+<script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
+<style>
+:root{--bg:#0b1a11;--bg2:#121f16;--bg3:#182a1e;--bg4:#1e3526;--gr:#2a4432;--gr2:#3a5a42;--gl:#1b382b;--tx:#dfe9df;--m:#7fa07f;--dg:#c8963e;--gn:#4caf50;--gn2:#2e7d32;--bd:#1a3a22;--wh:#fff;--rd:#ef5350;--bl:#42a5f5}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:13px}
+a{color:var(--dg);text-decoration:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--gr);border-radius:3px}
+.splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;transition:.6s}
+.splash.off{opacity:0;pointer-events:none}
+.splash .logo{font-size:26px;font-weight:900;color:var(--dg);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+#app{display:none}
+.side{position:fixed;left:0;top:0;bottom:0;width:190px;background:var(--bg2);border-right:1px solid var(--bd);padding:10px 0;overflow-y:auto;z-index:100}
+.side .brand{padding:12px 14px;border-bottom:1px solid var(--bd);margin-bottom:8px}
+.side .brand h2{font-size:14px;color:var(--dg)}
+.side .brand small{font-size:9px;color:var(--m)}
+.side nav a{display:flex;align-items:center;gap:8px;padding:8px 14px;color:var(--m);font-size:11px;border-left:3px solid transparent;transition:.2s;cursor:pointer}
+.side nav a:hover,.side nav a.on{color:var(--tx);background:var(--bg3);border-left-color:var(--dg)}
+.side nav a i{width:16px;text-align:center}
+.side nav .sep{height:1px;background:var(--bd);margin:8px 14px}
+.main{margin-left:190px;padding:15px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;padding:10px 16px;background:var(--bg2);border-radius:10px;border:1px solid var(--bd)}
+.topbar .search{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:6px 12px;color:var(--tx);font-size:11px;width:220px}
+.topbar .search::placeholder{color:var(--m)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:15px}
+.kpis6{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:15px}
+.kpi{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px}
+.kpi b{font-size:9px;color:var(--m);display:block;margin-bottom:4px}
+.kpi strong{font-size:18px;color:var(--dg)}
+.kpi .sub{font-size:9px;color:var(--m);margin-top:2px}
+.kpi.green strong{color:var(--gn)}
+.kpi.red strong{color:var(--rd)}
+.cf-bar{height:4px;border-radius:2px;background:var(--bg3);margin-top:6px;overflow:hidden}
+.cf-positive .cf-fill{background:var(--gn);height:100%;border-radius:2px;transition:width .4s}
+.cf-negative .cf-fill{background:var(--rd);height:100%;border-radius:2px;transition:width .4s}
+.box{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:15px}
+.box h3{font-size:12px;color:var(--dg);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.hero{background:linear-gradient(135deg,var(--gl),var(--bg4));border:1px solid var(--bd);border-radius:10px;padding:18px 20px;margin-bottom:15px}
+.hero h2{font-size:18px;color:var(--dg);margin-bottom:4px}
+.hero p{font-size:10px;color:var(--m)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form .field{display:flex;flex-direction:column;gap:2px}
+.form .field.full{grid-column:1/-1}
+.form label{font-size:9px;font-weight:700;color:var(--m);text-transform:uppercase}
+.form input,.form select,.form textarea{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:7px 10px;color:var(--tx);font-size:11px}
+.form input:focus,.form select:focus{border-color:var(--dg);outline:none}
+.table{overflow-x:auto;border-radius:8px;border:1px solid var(--bd)}
+table{width:100%;border-collapse:collapse;font-size:10px}
+th{background:var(--bg3);padding:8px 10px;text-align:left;color:var(--dg);font-size:9px;text-transform:uppercase;position:sticky;top:0}
+td{padding:6px 10px;border-top:1px solid var(--bd)}
+tr:hover td{background:var(--bg3)}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;transition:.2s;color:var(--wh);background:var(--gl)}
+.btn:hover{opacity:.85}
+.btn-sm{padding:4px 8px;font-size:9px}
+.btn.gold{background:var(--dg)}
+.btn.green{background:var(--gn2)}
+.btn.red{background:var(--rd)}
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700}
+.active-badge{background:rgba(76,175,80,.2);color:var(--gn)}
+.inactive-badge{background:rgba(239,83,80,.2);color:var(--rd)}
+.warn-badge{background:rgba(200,150,62,.2);color:var(--dg)}
+.sec{display:none}
+.sec.on{display:block}
+.chart{position:relative;height:200px}
+.chart canvas{width:100%!important;height:100%!important}
+/* POS styles */
+.pos-grid{display:grid;grid-template-columns:1fr 340px;gap:15px}
+.pos-cart{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;max-height:calc(100vh - 130px);overflow-y:auto;position:sticky;top:15px}
+.pos-cart h3{font-size:12px;color:var(--dg);margin-bottom:10px}
+.cart-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)}
+.cart-item .ci-name{flex:1;font-size:10px}
+.cart-item .ci-qty{display:flex;align-items:center;gap:4px}
+.cart-item .ci-qty button{width:20px;height:20px;border:1px solid var(--bd);background:var(--bg3);color:var(--tx);border-radius:4px;cursor:pointer;font-size:10px}
+.cart-item .ci-price{font-size:10px;color:var(--dg);min-width:50px;text-align:right}
+.pos-summary{margin-top:12px;border-top:2px solid var(--bd);padding-top:10px}
+.pos-summary .ps-line{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;color:var(--m)}
+.pos-summary .ps-line.total{font-size:14px;font-weight:900;color:var(--dg);border-top:2px solid var(--dg);padding-top:6px;margin-top:4px}
+.pos-summary .ps-line.discount{color:var(--gn)}
+.rcpt-discount-detail,.rcpt-shipping-detail{font-size:9px;color:var(--m);margin-left:8px}
+/* Tipo cliente card */
+.tipo-cliente-card{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;font-size:9px;font-weight:700}
+/* Config section styles */
+.cfg-section{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:15px}
+.cfg-section h3{font-size:12px;color:var(--dg);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.cfg-tabs{display:flex;gap:4px;margin-bottom:15px;flex-wrap:wrap}
+.cfg-tab{padding:6px 14px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--m);border:1px solid var(--bd);transition:.2s}
+.cfg-tab:hover,.cfg-tab.on{background:var(--gl);color:var(--tx);border-color:var(--dg)}
+.cfg-panel{display:none}
+.cfg-panel.on{display:block}
+.cfg-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:8px;margin-bottom:6px}
+.cfg-row .cfg-label{flex:1;font-size:10px}
+.cfg-row .cfg-value{font-size:10px;color:var(--dg);font-weight:700}
+.cfg-row .cfg-actions{display:flex;gap:4px}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:var(--bd);border-radius:20px;transition:.3s}
+.toggle .slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--wh);border-radius:50%;transition:.3s}
+.toggle input:checked+.slider{background:var(--gn)}
+.toggle input:checked+.slider:before{transform:translateX(16px)}
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:20px;max-width:480px;width:95%;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:14px;color:var(--dg);margin-bottom:12px}
+.modal .close{float:right;cursor:pointer;color:var(--m);font-size:16px}
+/* Responsive */
+@media(max-width:900px){.side{width:50px}.side .brand h2,.side nav a span{display:none}.main{margin-left:50px}.pos-grid{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}}
+/* Animation */
+.fade{animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="splash"><div class="logo">PG del Campo</div></div>
+<div id="app">
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="side">
+<div class="brand"><h2>PG del Campo</h2><small>Panel Integral v2</small></div>
+<nav>
+<a onclick="nav('inicio')" class="on"><i class="fas fa-home"></i><span>Inicio</span></a>
+<a onclick="nav('pos')"><i class="fas fa-cash-register"></i><span>POS</span></a>
+<a onclick="nav('cxc')"><i class="fas fa-file-invoice-dollar"></i><span>CxC</span></a>
+<a onclick="nav('ventas')"><i class="fas fa-chart-line"></i><span>Ventas</span></a>
+<div class="sep"></div>
+<a onclick="nav('clientes')"><i class="fas fa-users"></i><span>Clientes</span></a>
+<a onclick="nav('productos')"><i class="fas fa-boxes-stacked"></i><span>Inventario</span></a>
+<a onclick="nav('catalogo')"><i class="fas fa-store"></i><span>Catálogo/Órdenes</span></a>
+<div class="sep"></div>
+<a onclick="nav('trans')"><i class="fas fa-receipt"></i><span>Transacciones</span></a>
+<a onclick="nav('flujo')"><i class="fas fa-money-bill-trend-up"></i><span>Flujo de Caja</span></a>
+<a onclick="nav('gastos')"><i class="fas fa-wallet"></i><span>Gastos</span></a>
+<a onclick="nav('proveedores')"><i class="fas fa-truck-field"></i><span>Proveedores</span></a>
+<div class="sep"></div>
+<a onclick="nav('estadisticas')"><i class="fas fa-chart-pie"></i><span>Estadísticas</span></a>
+<a onclick="nav('kai')"><i class="fas fa-robot"></i><span>Kai</span></a>
+<a onclick="nav('vendedores')"><i class="fas fa-user-tie"></i><span>Vendedores</span></a>
+<a onclick="nav('cupones')"><i class="fas fa-tags"></i><span>Cupones</span></a>
+<a onclick="nav('qr')"><i class="fas fa-qrcode"></i><span>QR / LaFise</span></a>
+<a onclick="nav('recibos')"><i class="fas fa-print"></i><span>Recibos</span></a>
+<div class="sep"></div>
+<a onclick="nav('config')" style="color:var(--dg)"><i class="fas fa-gear"></i><span>Configuración</span></a>
+</nav>
+</aside>
+
+<!-- ═══ TOPBAR ═══ -->
+<div class="topbar">
+<input class="search" placeholder="Buscar producto, cliente, recibo...">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="font-size:10px;color:var(--m)"><i class="fas fa-clock"></i> <span id="clock"></span></span>
+<span style="font-size:10px;color:var(--m)"><i class="fas fa-cloud"></i> Online</span>
+</div>
+</div>
+
+<!-- ═══ INICIO ═══ -->
+<section id="sec-inicio" class="sec on">
+<div class="hero">
+<h2>Panel Integral — PG del Campo</h2>
+<p>Sistema de gestión empresarial integral para Productos Globales del Campo, Jinotepe, Carazo.</p>
+</div>
+<div class="kpis">
+<div class="kpi green"><b>Ventas hoy</b><strong id="kpi-ventas-hoy">C$0.00</strong><div class="sub" id="kpi-ventas-count">0 transacciones</div></div>
+<div class="kpi"><b>CxC pendiente</b><strong id="kpi-cxc">C$0.00</strong><div class="sub" id="kpi-cxc-count">0 clientes</div></div>
+<div class="kpi"><b>Productos</b><strong id="kpi-prod">0</strong><div class="sub">en inventario</div></div>
+<div class="kpi"><b>Clientes</b><strong id="kpi-cli">0</strong><div class="sub">registrados</div></div>
+<div class="kpi gold"><b>Gastos mes</b><strong id="kpi-gastos">C$0.00</strong></div>
+<div class="kpi"><b>Flujo neto</b><strong id="kpi-flujo">C$0.00</strong><div class="sub">ingresos - gastos</div></div>
+</div>
+<div class="grid2">
+<div class="box"><h3>📈 Ventas últimos 7 días</h3><div class="chart"><canvas id="chartInicio"></canvas></div></div>
+<div class="box"><h3>🏆 Top 5 productos</h3><div class="table"><table><thead><tr><th>Producto</th><th>Unidades</th><th>Ingresos</th></tr></thead><tbody id="topProdBody"></tbody></table></div></div>
+</div>
+<div class="box"><h3>⏰ Actividad reciente</h3><div class="table"><table><thead><tr><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead><tbody id="activityBody"></tbody></table></div></div>
+</section>
+
+<!-- ═══ POS ═══ -->
+<section id="sec-pos" class="sec">
+<div class="pos-grid">
+<div>
+<div class="box">
+<h3>🛒 Punto de Venta (POS)</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+<div class="field"><label>Tipo de Cliente</label>
+<select id="pos-tipo-cliente" onchange="recalcPOS()">
+<option value="particular">👤 Particular</option>
+<option value="comercio">🏪 Comercio</option>
+<option value="distribuidor">🚚 Distribuidor</option>
+<option value="a_domicilio">🏠 A Domicilio</option>
+</select>
+</div>
+<div class="field"><label>Cliente</label>
+<select id="pos-cliente" onchange="recalcPOS()"><option value="">— Seleccionar —</option></select>
+</div>
+<div class="field"><label>Tipo de Envío</label>
+<select id="pos-tipo-envio" onchange="recalcPOS()">
+<option value="recoger_tienda">📦 Recoger en Tienda</option>
+<option value="domicilio_jinotepe">🛵 Domicilio — Jinotepe (C$20)</option>
+<option value="domicilio_dolores">🛵 Domicilio — Dolores (C$20)</option>
+<option value="domicilio_diriamba">🛵 Domicilio — Diriamba (C$20)</option>
+<option value="domicilio_san_marcos">🛵 Domicilio — San Marcos (C$20)</option>
+<option value="convenir">🚛 Envío a Convenir</option>
+</select>
+</div>
+</div>
+<div class="field"><label>Buscar producto</label><input id="pos-search" placeholder="Nombre o código..." oninput="filterProducts()"></div>
+<div id="pos-products" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:calc(100vh - 320px);overflow-y:auto"></div>
+</div>
+</div>
+<div class="pos-cart">
+<h3>🧾 Carrito</h3>
+<div id="cart-items"></div>
+<div class="pos-summary">
+<div class="ps-line"><span>Subtotal</span><span id="ps-subtotal">C$0.00</span></div>
+<div class="ps-line discount" id="ps-desc-compra-row" style="display:none"><span>Desc. compra (<span id="ps-desc-pct">0</span>%)</span><span id="ps-desc-compra">-C$0.00</span></div>
+<div class="ps-line discount" id="ps-desc-fidelidad-row" style="display:none"><span>Desc. fidelidad (2%)</span><span id="ps-desc-fidelidad">-C$0.00</span></div>
+<div class="ps-line discount" id="ps-desc-cupon-row" style="display:none"><span>Desc. cupón</span><span id="ps-desc-cupon">-C$0.00</span></div>
+<div class="ps-line" id="ps-envio-row" style="display:none"><span>Envío (<span id="ps-envio-zona">—</span>)</span><span id="ps-envio">C$0.00</span></div>
+<div class="ps-line total"><span>Total</span><span id="ps-total">C$0.00</span></div>
+</div>
+<div class="field" style="margin-top:10px"><label>Método de pago</label>
+<select id="pos-pago">
+<option value="efectivo">💵 Efectivo</option>
+<option value="transferencia">🏦 Transferencia (Alias ACH)</option>
+<option value="lafise_digital">📱 LaFise Digital / QR</option>
+<option value="credito_cxc">💳 Crédito — Cargado a CxC</option>
+<option value="contra_entrega">📦 Contra Entrega</option>
+</select>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+<button class="btn gold" onclick="submitPOS()" style="width:100%">✅ Cobrar</button>
+<button class="btn red" onclick="clearCart()" style="width:100%">🗑️ Limpiar</button>
+</div>
+<div id="pos-receipt-area" style="margin-top:10px"></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ CxC ═══ -->
+<section id="sec-cxc" class="sec">
+<div class="hero"><h2>Cuentas por Cobrar</h2><p>Control de crédito y estados de cuenta de clientes</p></div>
+<div class="kpis">
+<div class="kpi gold"><b>Total pendiente</b><strong id="cxc-total">C$0.00</strong></div>
+<div class="kpi"><b>Clientes con saldo</b><strong id="cxc-count">0</strong></div>
+<div class="kpi green"><b>Cobros del mes</b><strong id="cxc-cobros">C$0.00</strong></div>
+</div>
+<div class="box"><h3>Clientes con crédito</h3>
+<div class="table"><table><thead><tr><th>Cliente</th><th>Tipo</th><th>Saldo</th><th>Límite</th><th>Último pago</th><th>Acciones</th></tr></thead><tbody id="cxcBody"></tbody></table></div>
+</div>
+</section>
+
+<!-- ═══ VENTAS ═══ -->
+<section id="sec-ventas" class="sec">
+<div class="hero"><h2>Registro de Ventas</h2><p>Historial completo de transacciones de venta</p></div>
+<div class="box">
+<div class="table"><table><thead><tr><th>Fecha</th><th>Recibo</th><th>Cliente</th><th>Tipo</th><th>Subtotal</th><th>Desc.</th><th>Envío</th><th>Total</th><th>Pago</th><th>Estado</th></tr></thead><tbody id="ventasBody"></tbody></table></div>
+</div>
+</section>
+
+<!-- ═══ CLIENTES ═══ -->
+<section id="sec-clientes" class="sec">
+<div class="hero"><h2>Gestión de Clientes</h2><p>CRM integrado con tipos de cliente, fidelidad y Tienda en Línea</p></div>
+<div class="grid2">
+<div class="box">
+<h3>Registrar / Editar cliente</h3>
+<form id="cliForm" class="form">
+<input type="hidden" id="cliId">
+<div class="field"><label>Nombre</label><input id="cliName" required></div>
+<div class="field"><label>Teléfono</label><input id="cliPhone" required></div>
+<div class="field"><label>Dirección</label><input id="cliAddr"></div>
+<div class="field"><label>Zona</label>
+<select id="cliZone">
+<option value="Jinotepe">Jinotepe</option>
+<option value="Dolores">Dolores</option>
+<option value="Diriamba">Diriamba</option>
+<option value="San Marcos">San Marcos</option>
+<option value="Otra">Otra</option>
+</select>
+</div>
+<div class="field"><label>Tipo de Cliente</label>
+<select id="cliTipo">
+<option value="particular">👤 Particular</option>
+<option value="comercio">🏪 Comercio</option>
+<option value="distribuidor">🚚 Distribuidor</option>
+<option value="a_domicilio">🏠 A Domicilio</option>
+</select>
+</div>
+<div class="field"><label>Crédito</label>
+<div class="field-row" style="display:flex;gap:6px;align-items:center">
+<input id="cliCredito" type="number" step="0.01" value="0" style="flex:1">
+<div class="toggle"><input type="checkbox" id="cliCreditoActivo"><span class="slider"></span></div>
+</div>
+</div>
+<div class="field"><label>Tienda en Línea</label>
+<div class="toggle"><input type="checkbox" id="cliTiendaOnline" checked><span class="slider"></span></div>
+</div>
+<div class="field full"><label>Notas</label><input id="cliNotes"></div>
+</form>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+<button class="btn" form="cliForm" style="width:100%">Guardar</button>
+<button type="button" class="btn" style="background:#777;width:100%" onclick="resetCli()">Limpiar</button>
+</div>
+</div>
+<div class="box">
+<h3>Clientes registrados</h3>
+<div class="table"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Tipo</th><th>Zona</th><th>Compras</th><th>Total</th><th>Online</th><th>Acciones</th></tr></thead><tbody id="cliBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ INVENTARIO ═══ -->
+<section id="sec-productos" class="sec">
+<div class="box">
+<h3>Inventario</h3>
+<form id="prod" class="form">
+<input type="hidden" id="pid">
+<div class="field"><label>Nombre</label><input id="pn" required></div>
+<div class="field"><label>Imagen URL</label><input id="pi"></div>
+<div class="field"><label>Descripción</label><input id="pd"></div>
+<div class="field"><label>Costo</label><input id="pc" type="number" step="0.01"></div>
+<div class="field"><label>Precio</label><input id="pp" type="number" step="0.01" required></div>
+<div class="field"><label>Stock</label><input id="ps" type="number" required></div>
+<div class="field"><label>Categoría</label><input id="pcat"></div>
+<div class="field"><label>Código / SKU</label><input id="psku"></div>
+</form>
+<div id="variations" style="margin-top:10px">
+<label style="font-size:9px;font-weight:800;display:block;margin-bottom:4px">Variaciones (hasta 2 por producto)</label>
+<div id="variationList">
+<div class="variation-row" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px;margin-bottom:4px">
+<input placeholder="Nombre variación"><input type="number" placeholder="Precio" step="0.01"><input type="number" placeholder="Stock">
+</div>
+</div>
+<button type="button" class="btn-sm btn" onclick="addVariation()" style="margin-top:4px">+ Variación</button>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+<button class="btn" style="width:100%" form="prod">Guardar</button>
+<button type="button" class="btn" style="background:#777;width:100%" onclick="resetProd()">Limpiar</button>
+</div>
+</div>
+<div class="box">
+<h3>Productos registrados <span class="badge active-badge">PGdelC</span></h3>
+<div class="table"><table><thead><tr><th>Producto</th><th>Costo</th><th>Precio</th><th>Margen</th><th>Stock</th><th>Categoría</th><th>Acción</th></tr></thead><tbody id="prodBody"></tbody></table></div>
+</div>
+</section>
+
+<!-- ═══ CATÁLOGO / ÓRDENES ONLINE ═══ -->
+<section id="sec-catalogo" class="sec">
+<div class="hero"><h2>Catálogo and Órdenes Online</h2><p>Tienda en Línea integrada con inventario, envíos y pagos.</p></div>
+<div class="grid2">
+<div class="box">
+<h3>🌐 Catálogo Digital</h3>
+<p style="font-size:10px;color:var(--m);margin-bottom:10px">Catálogo sincronizado con inventario y configuración de envíos/pagos.</p>
+<div style="display:flex;gap:8px;margin-bottom:12px">
+<button class="btn" onclick="generateCatalogLink()">🔗 Generar enlace</button>
+<button class="btn gold" onclick="shareWhatsApp()">📱 WhatsApp</button>
+</div>
+<div id="catalogLink" style="display:none;padding:10px;background:var(--bg3);border-radius:8px;font-size:10px">
+<b>Enlace:</b> <span id="catalogUrl"></span>
+<button class="btn-sm btn" style="margin-left:8px" onclick="copyCatalogLink()">Copiar</button>
+</div>
+<div id="catalogPreview" style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:300px;overflow-y:auto"></div>
+</div>
+<div class="box">
+<h3>📦 Órdenes Online</h3>
+<p style="font-size:10px;color:var(--m);margin-bottom:10px">Pedidos recibidos desde Tienda en Línea y WhatsApp.</p>
+<div class="table"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Envío</th><th>Monto</th><th>Estado</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+</div>
+</div>
+<div class="box" style="margin-top:15px">
+<h3>📲 Venta por WhatsApp</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="field"><label>Número</label><input id="waNumber" placeholder="505XXXXXXXX"></div>
+<div class="field"><label>Mensaje</label><input id="waMsg" placeholder="Hola, tu pedido está listo..."></div>
+</div>
+<button class="btn green" onclick="sendWhatsAppOrder()" style="margin-top:8px">📲 Enviar WhatsApp</button>
+</div>
+</section>
+
+<!-- ═══ TRANSACCIONES ═══ -->
+<section id="sec-trans" class="sec">
+<div class="box">
+<h3>Registro Único de Transacciones</h3>
+<div class="table"><table><thead><tr><th>Fecha</th><th>Cliente / Código</th><th>Tipo</th><th>Recibo</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="transBody"></tbody></table></div>
+</div>
+</section>
+
+<!-- ═══ FLUJO DE CAJA ═══ -->
+<section id="sec-flujo" class="sec">
+<div class="hero"><h2>Flujo de Caja</h2><p>Monitorea si entra más dinero del que sale.</p></div>
+<div class="kpis6">
+<div class="kpi"><b>Ingresos del mes</b><strong id="cf1">C$0.00</strong></div>
+<div class="kpi"><b>Gastos del mes</b><strong id="cf2">C$0.00</strong></div>
+<div class="kpi"><b>Flujo neto</b><strong id="cf3">C$0.00</strong><div class="cf-bar cf-positive"><div class="cf-fill" id="cfBar" style="width:50%"></div></div></div>
+<div class="kpi"><b>Cuentas por pagar</b><strong id="cf4">C$0.00</strong></div>
+<div class="kpi"><b>Cuentas por cobrar</b><strong id="cf5">C$0.00</strong></div>
+<div class="kpi"><b>Balance total</b><strong id="cf6">C$0.00</strong></div>
+</div>
+<div class="grid2">
+<div class="box"><h3>Flujo mensual (6 meses)</h3><div class="chart"><canvas id="cfChart"></canvas></div></div>
+<div class="box"><h3>Desglose de ingresos</h3><div class="chart"><canvas id="cfBreakdown"></canvas></div></div>
+</div>
+</section>
+
+<!-- ═══ GASTOS ═══ -->
+<section id="sec-gastos" class="sec">
+<div class="hero"><h2>Gestión de Gastos</h2><p>Registra y controla todos los gastos del negocio.</p></div>
+<div class="grid2">
+<div class="box">
+<h3>Registrar gasto</h3>
+<form id="expenseForm" class="form">
+<div class="field"><label>Descripción</label><input id="expDesc" required></div>
+<div class="field"><label>Monto C$</label><input id="expAmount" type="number" step="0.01" required></div>
+<div class="field"><label>Categoría</label>
+<select id="expCat">
+<option value="operativo">Operativo</option>
+<option value="inventario">Inventario / Compras</option>
+<option value="servicios">Servicios</option>
+<option value="alquiler">Alquiler</option>
+<option value="salarios">Salarios</option>
+<option value="transporte">Transporte</option>
+<option value="marketing">Marketing</option>
+<option value="otro">Otro</option>
+</select>
+</div>
+<div class="field"><label>Proveedor</label><select id="expSupplier"><option value="">— Sin proveedor —</option></select></div>
+<div class="field"><label>Recurrente</label>
+<select id="expRecurring">
+<option value="no">No</option>
+<option value="mensual">Mensual</option>
+<option value="quincenal">Quincenal</option>
+<option value="semanal">Semanal</option>
+</select>
+</div>
+<div class="field"><label>Fecha</label><input id="expDate" type="date"></div>
+<div class="field full"><button class="btn gold" style="width:100%">Registrar gasto</button></div>
+</form>
+</div>
+<div class="box">
+<h3>Gastos registrados</h3>
+<div class="table"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th>Recurrente</th><th>Acción</th></tr></thead><tbody id="expenseBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ PROVEEDORES ═══ -->
+<section id="sec-proveedores" class="sec">
+<div class="hero"><h2>Proveedores</h2><p>Gestiona proveedores y cuentas por pagar.</p></div>
+<div class="grid2">
+<div class="box">
+<h3>Registrar proveedor</h3>
+<form id="supplierForm" class="form">
+<input type="hidden" id="supId">
+<div class="field"><label>Nombre</label><input id="supName" required></div>
+<div class="field"><label>Teléfono</label><input id="supPhone"></div>
+<div class="field"><label>Email</label><input id="supEmail"></div>
+<div class="field"><label>Dirección</label><input id="supAddress"></div>
+<div class="field"><label>Categoría</label><input id="supCategory" placeholder="Alimentos, Empaques..."></div>
+<div class="field full"><label>Notas</label><input id="supNotes"></div>
+<div class="field full"><button class="btn" style="width:100%">Guardar proveedor</button></div>
+</form>
+</div>
+<div class="box">
+<h3>Proveedores registrados</h3>
+<div class="table"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Categoría</th><th>Acciones</th></tr></thead><tbody id="supplierBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ ESTADÍSTICAS ═══ -->
+<section id="sec-estadisticas" class="sec">
+<div class="hero"><h2>Estadísticas y Reportes</h2><p>Análisis avanzado del rendimiento del negocio.</p></div>
+<div class="kpis">
+<div class="kpi green"><b>Ventas mes</b><strong id="st-ventas">C$0.00</strong></div>
+<div class="kpi gold"><b>Ganancia estimada</b><strong id="st-ganancia">C$0.00</strong></div>
+<div class="kpi"><b>Ticket promedio</b><strong id="st-ticket">C$0.00</strong></div>
+<div class="kpi"><b>Clientes activos</b><strong id="st-activos">0</strong></div>
+</div>
+<div class="grid2">
+<div class="box"><h3>Ventas por categoría</h3><div class="chart"><canvas id="stCatChart"></canvas></div></div>
+<div class="box"><h3>Métodos de pago</h3><div class="chart"><canvas id="stPayChart"></canvas></div></div>
+</div>
+<div class="grid2">
+<div class="box"><h3>Envíos por zona</h3><div class="chart"><canvas id="stEnvioChart"></canvas></div></div>
+<div class="box"><h3>Descuentos aplicados</h3><div class="chart"><canvas id="stDescChart"></canvas></div></div>
+</div>
+</section>
+
+<!-- ═══ KAI ═══ -->
+<section id="sec-kai" class="sec">
+<div class="hero"><h2>Kai — Asistente Inteligente</h2><p>Tu asistente virtual conoce tu inventario, clientes, ventas, envíos, descuentos y más.</p></div>
+<div class="box">
+<div id="kai-chat" style="height:280px;overflow-y:auto;padding:8px;border:1px solid var(--bd);border-radius:8px;margin-bottom:8px">
+<div style="background:var(--bg3);padding:8px;border-radius:8px;font-size:10px;margin-bottom:6px"><b style="color:var(--dg)">Kai:</b> ¡Hola! Soy Kai, tu asistente. Pregúntame sobre ventas, clientes, productos, envíos, descuentos o cualquier tema de tu negocio.</div>
+</div>
+<div style="display:flex;gap:6px">
+<input id="kai-input" placeholder="Escribe tu pregunta..." style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:7px 10px;color:var(--tx);font-size:11px">
+<button class="btn" onclick="askKai()">Preguntar</button>
+</div>
+</div>
+</section>
+
+<!-- ═══ VENDEDORES ═══ -->
+<section id="sec-vendedores" class="sec">
+<div class="hero"><h2>Vendedores</h2><p>Gestión del equipo de ventas.</p></div>
+<div class="grid2">
+<div class="box">
+<h3>Registrar vendedor</h3>
+<form id="sellForm" class="form">
+<input type="hidden" id="sellId">
+<div class="field"><label>Nombre</label><input id="sellName" required></div>
+<div class="field"><label>Teléfono</label><input id="sellPhone"></div>
+<div class="field"><label>Meta mensual C$</label><input id="sellMeta" type="number" step="0.01" value="0"></div>
+<div class="field"><label>Comisión %</label><input id="sellComision" type="number" step="0.01" value="0"></div>
+<div class="field full"><button class="btn" style="width:100%">Guardar</button></div>
+</form>
+</div>
+<div class="box">
+<h3>Vendedores registrados</h3>
+<div class="table"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Meta</th><th>Vendido</th><th>Comisión</th><th>Acciones</th></tr></thead><tbody id="sellBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ CUPONES ═══ -->
+<section id="sec-cupones" class="sec">
+<div class="hero"><h2>Cupones de Descuento</h2><p>Crea y gestiona códigos promocionales.</p></div>
+<div class="grid2">
+<div class="box">
+<h3>Crear cupón</h3>
+<form id="couponForm" class="form">
+<div class="field"><label>Código</label><input id="cpCode" required placeholder="PROMO10"></div>
+<div class="field"><label>Descuento %</label><input id="cpPct" type="number" step="0.01" value="0"></div>
+<div class="field"><label>Descuento fijo C$</label><input id="cpFixed" type="number" step="0.01" value="0"></div>
+<div class="field"><label>Monto mínimo C$</label><input id="cpMin" type="number" step="0.01" value="0"></div>
+<div class="field"><label>Usos máximos</label><input id="cpMax" type="number" value="0"></div>
+<div class="field"><label>Expira</label><input id="cpExp" type="date"></div>
+<div class="field"><label>Tipo cliente</label>
+<select id="cpTipo">
+<option value="todos">Todos</option>
+<option value="particular">Solo Particular</option>
+<option value="a_domicilio">Solo A Domicilio</option>
+<option value="no_comercio">No Comercio/Distribuidor</option>
+</select>
+</div>
+<div class="field"><label>Activo</label><div class="toggle"><input type="checkbox" id="cpActive" checked><span class="slider"></span></div></div>
+<div class="field full"><button class="btn gold" style="width:100%">Crear cupón</button></div>
+</form>
+</div>
+<div class="box">
+<h3>Cupones activos</h3>
+<div class="table"><table><thead><tr><th>Código</th><th>Descuento</th><th>Mínimo</th><th>Usos</th><th>Expira</th><th>Acción</th></tr></thead><tbody id="couponBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ QR / LAFISE ═══ -->
+<section id="sec-qr" class="sec">
+<div class="hero"><h2>QR y LaFise Digital</h2><p>Pagos digitales con código QR y LaFise Bancentro.</p></div>
+<div class="grid2">
+<div class="box">
+<h3>🏦 Datos Bancarios — LaFise Bancentro</h3>
+<div style="padding:12px;background:var(--bg3);border-radius:8px;font-size:10px;line-height:1.8">
+<div><b>Titular:</b> Fernando Martínez</div>
+<div><b>Cuenta:</b> 140051265</div>
+<div><b>Alias ACH:</b> 5797 3097</div>
+<div><b>Tipo:</b> Ahorro — NIO (Córdocas)</div>
+</div>
+<div style="margin-top:10px">
+<button class="btn" onclick="generateQR()">📱 Generar QR de pago</button>
+</div>
+<div id="qrDisplay" style="margin-top:10px;text-align:center"></div>
+</div>
+<div class="box">
+<h3>📋 Historial de pagos recibidos</h3>
+<div class="table"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Canal</th><th>Comprobante</th></tr></thead><tbody id="payHistBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ RECIBOS ═══ -->
+<section id="sec-recibos" class="sec">
+<div class="hero"><h2>Recibos de Venta</h2><p>Genera y reimprime recibos con desglose completo.</p></div>
+<div class="box">
+<h3>Últimos recibos</h3>
+<div class="table"><table><thead><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Subtotal</th><th>Desc. Compra</th><th>Desc. Fidelidad</th><th>Cupón</th><th>Envío</th><th>Total</th><th>Acción</th></tr></thead><tbody id="rcptBody"></tbody></table></div>
+</div>
+</section>
+
+<!-- ═══ CONFIGURACIÓN ═══ -->
+<section id="sec-config" class="sec">
+<div class="hero"><h2>⚙️ Configuración</h2><p>Panel interno de administración. Gestiona envíos, pagos, descuentos, promociones y tipos de cliente.</p></div>
+<div class="cfg-tabs">
+<div class="cfg-tab on" onclick="cfgNav('envio')">🛵 Envío y Cobertura</div>
+<div class="cfg-tab" onclick="cfgNav('pagos')">💳 Métodos de Pago</div>
+<div class="cfg-tab" onclick="cfgNav('descuentos')">🏷️ Descuentos y Promociones</div>
+<div class="cfg-tab" onclick="cfgNav('tipos')">👥 Tipos de Cliente</div>
+<div class="cfg-tab" onclick="cfgNav('tienda')">🌐 Tienda en Línea</div>
+</div>
+
+<!-- CFG: Envío -->
+<div id="cfg-envio" class="cfg-panel on">
+<div class="cfg-section">
+<h3>🛵 Tipos de Envío y Cobertura</h3>
+<div id="cfgEnvioList"></div>
+<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px">
+<h4 style="font-size:10px;color:var(--dg);margin-bottom:6px">+ Agregar tipo de envío</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<div class="field"><label>Nombre</label><input id="cfgEnvNombre" placeholder="Domicilio — Nueva Zona"></div>
+<div class="field"><label>Costo C$</label><input id="cfgEnvCosto" type="number" step="0.01" value="0"></div>
+<div class="field"><label>Zona</label><input id="cfgEnvZona" placeholder="Nombre de zona"></div>
+<div class="field"><label>Clave (key)</label><input id="cfgEnvKey" placeholder="domicilio_nueva_zona"></div>
+</div>
+<div class="field" style="margin-top:6px"><label>Activo</label><div class="toggle"><input type="checkbox" id="cfgEnvActivo" checked><span class="slider"></span></div></div>
+<button class="btn" onclick="saveEnvioTipo()" style="margin-top:8px">Guardar tipo de envío</button>
+</div>
+</div>
+</div>
+
+<!-- CFG: Pagos -->
+<div id="cfg-pagos" class="cfg-panel">
+<div class="cfg-section">
+<h3>💳 Métodos de Pago</h3>
+<div id="cfgPagoList"></div>
+<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px">
+<h4 style="font-size:10px;color:var(--dg);margin-bottom:6px">+ Agregar método de pago</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<div class="field"><label>Nombre</label><input id="cfgPayNombre" placeholder="Transferencia Bancaria"></div>
+<div class="field"><label>Código</label><input id="cfgPayCode" placeholder="transferencia"></div>
+</div>
+<div class="field" style="margin-top:6px"><label>Descripción</label><input id="cfgPayDesc" placeholder="Pago por transferencia..."></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+<div class="field"><label>Comprobante requerido</label><div class="toggle"><input type="checkbox" id="cfgPayComp"><span class="slider"></span></div></div>
+<div class="field"><label>Activo</label><div class="toggle"><input type="checkbox" id="cfgPayActivo" checked><span class="slider"></span></div></div>
+</div>
+<button class="btn" onclick="savePagoMetodo()" style="margin-top:8px">Guardar método de pago</button>
+</div>
+</div>
+</div>
+
+<!-- CFG: Descuentos -->
+<div id="cfg-descuentos" class="cfg-panel">
+<div class="cfg-section">
+<h3>🏷️ Descuentos por Compra (Escalonados)</h3>
+<div id="cfgDescList"></div>
+<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px">
+<h4 style="font-size:10px;color:var(--dg);margin-bottom:6px">+ Agregar nivel de descuento</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+<div class="field"><label>Nombre</label><input id="cfgDcNombre" placeholder="Descuento 1%"></div>
+<div class="field"><label>Monto mínimo C$</label><input id="cfgDcMin" type="number" step="0.01" value="0"></div>
+<div class="field"><label>Porcentaje %</label><input id="cfgDcPct" type="number" step="0.01" value="0"></div>
+</div>
+<div class="field" style="margin-top:6px"><label>Activo</label><div class="toggle"><input type="checkbox" id="cfgDcActivo" checked><span class="slider"></span></div></div>
+<button class="btn" onclick="saveDescNivel()" style="margin-top:8px">Guardar nivel</button>
+</div>
+</div>
+<div class="cfg-section">
+<h3>💝 Descuento por Fidelidad</h3>
+<div id="cfgFidelidadInfo"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+<div class="field"><label>Porcentaje %</label><input id="cfgFidPct" type="number" step="0.01" value="2"></div>
+<div class="field"><label>Activo</label><div class="toggle"><input type="checkbox" id="cfgFidActivo" checked><span class="slider"></span></div></div>
+</div>
+<button class="btn" onclick="saveFidelidad()" style="margin-top:8px">Guardar fidelidad</button>
+</div>
+</div>
+
+<!-- CFG: Tipos de Cliente -->
+<div id="cfg-tipos" class="cfg-panel">
+<div class="cfg-section">
+<h3>👥 Tipos de Cliente</h3>
+<div id="cfgTiposList"></div>
+<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px">
+<h4 style="font-size:10px;color:var(--dg);margin-bottom:6px">+ Agregar tipo de cliente</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<div class="field"><label>Nombre</label><input id="cfgTCNombre" placeholder="Nuevo Tipo"></div>
+<div class="field"><label>Código</label><input id="cfgTCCode" placeholder="nuevo_tipo"></div>
+<div class="field"><label>Icono (FA)</label><input id="cfgTCIcon" placeholder="user" value="user"></div>
+<div class="field"><label>Color</label><input id="cfgTCColor" type="color" value="#1b382b"></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px">
+<div class="field"><label>Desc. compra</label><div class="toggle"><input type="checkbox" id="cfgTCDescCompra" checked><span class="slider"></span></div></div>
+<div class="field"><label>Desc. fidelidad</label><div class="toggle"><input type="checkbox" id="cfgTCDescFid" checked><span class="slider"></span></div></div>
+<div class="field"><label>Crédito CxC</label><div class="toggle"><input type="checkbox" id="cfgTCCredito" checked><span class="slider"></span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px">
+<div class="field"><label>Tienda Online</label><div class="toggle"><input type="checkbox" id="cfgTCTienda" checked><span class="slider"></span></div></div>
+<div class="field"><label>Envío domicilio</label><div class="toggle"><input type="checkbox" id="cfgTCEnvio" checked><span class="slider"></span></div></div>
+<div class="field"><label>Envío auto</label><div class="toggle"><input type="checkbox" id="cfgTCEnvioAuto"><span class="slider"></span></div></div>
+</div>
+<div class="field" style="margin-top:6px"><label>Descripción</label><input id="cfgTCDesc" placeholder="Descripción del tipo de cliente"></div>
+<button class="btn" onclick="saveTipoCliente()" style="margin-top:8px">Guardar tipo de cliente</button>
+</div>
+</div>
+</div>
+
+<!-- CFG: Tienda Online -->
+<div id="cfg-tienda" class="cfg-panel">
+<div class="cfg-section">
+<h3>🌐 Configuración de Tienda en Línea</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="field"><label>Nombre de la tienda</label><input id="cfgTlNombre" value="PG del Campo — Tienda en Línea"></div>
+<div class="field"><label>URL base</label><input id="cfgTlUrl" value="https://pgdelcampo.kyte.app/catalogo"></div>
+<div class="field"><label>WhatsApp negocio</label><input id="cfgTlWa" value="505XXXXXXXX"></div>
+<div class="field"><label>Activo</label><div class="toggle"><input type="checkbox" id="cfgTlActivo" checked><span class="slider"></span></div></div>
+</div>
+<div class="field" style="margin-top:6px"><label>Mensaje de bienvenida</label><input id="cfgTlMsg" value="Bienvenido a Productos Globales del Campo!"></div>
+<button class="btn" onclick="saveTiendaOnline()" style="margin-top:8px">Guardar configuración</button>
+</div>
+</div>
+</section>
+
+<!-- ═══ MODALES ═══ -->
+<div id="modal-pay" class="modal-bg">
+<div class="modal">
+<span class="close" onclick="closeModal('modal-pay')">×</span>
+<h3>💳 Registrar Cobro</h3>
+<form id="payForm" class="form">
+<div class="field"><label>Cliente</label><select id="payCli"><option value="">—</option></select></div>
+<div class="field"><label>Monto C$</label><input id="payAmt" type="number" step="0.01" required></div>
+<div class="field"><label>Método</label>
+<select id="payMethod">
+<option value="efectivo">Efectivo</option>
+<option value="transferencia">Transferencia</option>
+<option value="lafise_digital">LaFise Digital</option>
+</select>
+</div>
+<div class="field full"><label>Referencia / Comprobante</label><input id="payRef"></div>
+<div class="field full"><button class="btn gold" style="width:100%">Registrar cobro</button></div>
+</form>
+</div>
+</div>
+
+<div id="modal-stmt" class="modal-bg">
+<div class="modal">
+<span class="close" onclick="closeModal('modal-stmt')">×</span>
+<h3>📋 Estado de Cuenta</h3>
+<div id="stmtContent" style="font-size:10px;line-height:1.6"></div>
+</div>
+</div>
+
+<div id="modal-rcpt" class="modal-bg">
+<div class="modal">
+<span class="close" onclick="closeModal('modal-rcpt')">×</span>
+<h3>🧾 Recibo</h3>
+<div id="rcptContent"></div>
+<button class="btn" onclick="window.print()" style="margin-top:10px">🖨️ Imprimir</button>
+</div>
+</div>
+
+<div id="modal-buyer" class="modal-bg">
+<div class="modal">
+<span class="close" onclick="closeModal('modal-buyer')">×</span>
+<h3>👤 Nuevo Cliente Rápido</h3>
+<form id="quickBuyerForm" class="form">
+<div class="field"><label>Nombre</label><input id="qbName" required></div>
+<div class="field"><label>Teléfono</label><input id="qbPhone" required></div>
+<div class="field"><label>Tipo</label>
+<select id="qbTipo">
+<option value="particular">Particular</option>
+<option value="a_domicilio">A Domicilio</option>
+<option value="comercio">Comercio</option>
+<option value="distribuidor">Distribuidor</option>
+</select>
+</div>
+<div class="field full"><button class="btn" style="width:100%">Crear y seleccionar</button></div>
+</form>
+</div>
+</div>
+
+</div><!-- #app -->
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {getDatabase,ref,onValue,set,push,remove,update,get,query,orderByChild,equalTo,limitToLast} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const fbConfig={apiKey:"AIzaSyB6W3l4CVpseYJbZzBJ9Sd-3mLnf2P8cp8",authDomain:"productos-globales-campo.firebaseapp.com",databaseURL:"https://productos-globales-campo-default-rtdb.firebaseio.com",projectId:"productos-globales-campo",storageBucket:"productos-globales-campo.appspot.com",messagingSenderId:"621149599629",appId:"1:621149599629:web:779b2d7d5c8d5d8e5d5d5d"};
+const app=initializeApp(fbConfig);
+const db=getDatabase(app);
+
+// ═══ References ═══
+const R={
+  P:ref(db,"P"),C:ref(db,"C"),X:ref(db,"X"),T:ref(db,"T"),
+  CP:ref(db,"CP"),R:ref(db,"R"),EX:ref(db,"EX"),SUP:ref(db,"SUP"),
+  SELL:ref(db,"SELL"),CFG:ref(db,"configuracion")
+};
+
+// ═══ State ═══
+let productos=[],clientes=[],cuentas=[],transacciones=[],cupones=[],gastos=[],proveedores=[],vendedores=[],compras=[];
+let cart=[];
+let cfg={
+  envio:{activo:true,costo_base_zona:20,tipos_envio:{
+    domicilio_jinotepe:{nombre:"Envío a Domicilio — Jinotepe",costo:20,zona:"Jinotepe",activo:true},
+    domicilio_dolores:{nombre:"Envío a Domicilio — Dolores",costo:20,zona:"Dolores",activo:true},
+    domicilio_diriamba:{nombre:"Envío a Domicilio — Diriamba",costo:20,zona:"Diriamba",activo:true},
+    domicilio_san_marcos:{nombre:"Envío a Domicilio — San Marcos",costo:20,zona:"San Marcos",activo:true},
+    recoger_tienda:{nombre:"Recoger en Tienda",costo:0,zona:"N/A",activo:true},
+    convenir:{nombre:"Envío a Convenir",costo:0,zona:"Fuera de zona",activo:true}
+  }},
+  pagos:{metodos:{
+    efectivo:{nombre:"Efectivo",codigo:"efectivo",activo:true,requiere_comprobante:false},
+    transferencia:{nombre:"Transferencia Bancaria",codigo:"transferencia",activo:true,requiere_comprobante:true,
+      datos_cuenta:{banco:"LaFise Bancentro",titular:"Fernando Martínez",cuenta_numero:"140051265",alias_ach:"5797 3097"}},
+    lafise_digital:{nombre:"LaFise Digital / QR",codigo:"lafise_digital",activo:true,requiere_comprobante:false},
+    credito_cxc:{nombre:"Crédito — CxC",codigo:"credito_cxc",activo:true,requiere_comprobante:false},
+    contra_entrega:{nombre:"Contra Entrega",codigo:"contra_entrega",activo:true,requiere_comprobante:false}
+  }},
+  descuentos:{
+    por_compra:{niveles:{
+      nivel_1:{nombre:"Descuento 1%",monto_minimo:600,monto_maximo:1199.99,porcentaje:1,activo:true},
+      nivel_2:{nombre:"Descuento 2%",monto_minimo:1200,monto_maximo:1799.99,porcentaje:2,activo:true},
+      nivel_3:{nombre:"Descuento 3%",monto_minimo:1800,monto_maximo:null,porcentaje:3,activo:true}
+    }},
+    fidelidad:{nombre:"Descuento por Fidelidad",porcentaje:2,activo:true,aplica_a:["particular","a_domicilio"],no_aplica_a:["comercio","distribuidor"]}
+  },
+  tipos_cliente:{
+    particular:{codigo:"particular",nombre:"Cliente Particular",descuento_compra:true,descuento_fidelidad:true,credito_disponible:true,tienda_online:true,envio_domicilio:true,icono:"person",color:"#1b382b"},
+    comercio:{codigo:"comercio",nombre:"Comercio",descuento_compra:true,descuento_fidelidad:false,credito_disponible:true,tienda_online:true,envio_domicilio:true,icono:"store",color:"#c8963e"},
+    distribuidor:{codigo:"distribuidor",nombre:"Distribuidor",descuento_compra:true,descuento_fidelidad:false,credito_disponible:true,tienda_online:true,envio_domicilio:true,icono:"truck",color:"#8eb057"},
+    a_domicilio:{codigo:"a_domicilio",nombre:"Cliente a Domicilio",descuento_compra:true,descuento_fidelidad:true,credito_disponible:false,tienda_online:true,envio_domicilio:true,costo_envio_automatico:true,icono:"home",color:"#17577f"}
+  },
+  tienda_online:{activa:true,nombre:"PG del Campo — Tienda en Línea",url_base:"https://pgdelcampo.kyte.app/catalogo",whatsapp_negocio:"505XXXXXXXX"}
+};
+
+// ═══ Firebase Listeners ═══
+onValue(R.P,s=>{productos=[];s.forEach(c=>{productos.push({id:c.key,...c.val()})});renderProducts();renderPOSProducts();recalcPOS()});
+onValue(R.C,s=>{clientes=[];s.forEach(c=>{clientes.push({id:c.key,...c.val()})});renderClients();populateClientSelects();recalcPOS()});
+onValue(R.X,s=>{cuentas=[];s.forEach(c=>{cuentas.push({id:c.key,...c.val()})});renderCxC()});
+onValue(R.T,s=>{transacciones=[];s.forEach(c=>{transacciones.push({id:c.key,...c.val()})});renderTrans()});
+onValue(R.CP,s=>{cupones=[];s.forEach(c=>{cupones.push({id:c.key,...c.val()})});renderCoupons()});
+onValue(R.EX,s=>{gastos=[];s.forEach(c=>{gastos.push({id:c.key,...c.val()})});renderExpenses()});
+onValue(R.SUP,s=>{proveedores=[];s.forEach(c=>{proveedores.push({id:c.key,...c.val()})});renderSuppliers();populateSupplierSelect()});
+onValue(R.SELL,s=>{vendedores=[];s.forEach(c=>{vendedores.push({id:c.key,...c.val()})});renderSellers()});
+onValue(R.R,s=>{compras=[];s.forEach(c=>{compras.push({id:c.key,...c.val()})});renderVentas();renderInicio()});
+onValue(R.CFG,s=>{if(s.exists()){cfg={...cfg,...s.val()}};renderConfig();recalcPOS()});
+
+// ═══ Clock ═══
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleTimeString("es-NI")},1000);
+
+// ═══ Navigation ═══
+window.nav=function(id){
+  document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));
+  document.getElementById("sec-"+id).classList.add("on");
+  document.querySelectorAll(".side nav a").forEach(a=>a.classList.remove("on"));
+  event.currentTarget.classList.add("on");
+};
+window.cfgNav=function(id){
+  document.querySelectorAll(".cfg-panel").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".cfg-tab").forEach(t=>t.classList.remove("on"));
+  document.getElementById("cfg-"+id).classList.add("on");
+  event.currentTarget.classList.add("on");
+};
+
+// ═══ Modal helpers ═══
+window.openModal=function(id){document.getElementById(id).classList.add("on")};
+window.closeModal=function(id){document.getElementById(id).classList.remove("on")};
+
+// ═══ Format helpers ═══
+const fmt=(n)=>"C$"+Number(n||0).toFixed(2);
+const fmtN=(n)=>Number(n||0).toFixed(2);
+const now=()=>new Date().toISOString();
+const today=()=>new Date().toISOString().slice(0,10);
+const genId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+// ═══ POS LOGIC ═══
+let posCupon=null;
+
+window.filterProducts=function(){
+  const q=document.getElementById("pos-search").value.toLowerCase();
+  renderPOSProducts(productos.filter(p=>(p.nombre||"").toLowerCase().includes(q)||(p.sku||"").toLowerCase().includes(q)));
+};
+
+window.renderPOSProducts=function(list){
+  list=list||productos;
+  const el=document.getElementById("pos-products");
+  el.innerHTML="";
+  list.filter(p=>(p.stock||0)>0).forEach(p=>{
+    const d=document.createElement("div");
+    d.style.cssText="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:10px;cursor:pointer;transition:.2s;text-align:center";
+    d.innerHTML=`<div style="font-size:9px;color:var(--m);margin-bottom:2px">${p.sku||""}</div><div style="font-size:11px;font-weight:700;margin-bottom:4px">${p.nombre||p.id}</div><div style="font-size:12px;color:var(--dg);font-weight:900">${fmt(p.precio)}</div><div style="font-size:8px;color:var(--m)">Stock: ${p.stock}</div>`;
+    d.onclick=()=>addToCart(p);
+    d.onmouseover=()=>d.style.borderColor="var(--dg)";
+    d.onmouseout=()=>d.style.borderColor="var(--bd)";
+    el.appendChild(d);
+  });
+};
+
+window.addToCart=function(p){
+  const existing=cart.find(c=>c.id===p.id);
+  if(existing){existing.qty++;}
+  else{cart.push({id:p.id,nombre:p.nombre||p.id,precio:Number(p.precio||0),qty:1,stock:p.stock||0});}
+  renderCart();
+  recalcPOS();
+};
+
+window.removeFromCart=function(idx){
+  cart.splice(idx,1);renderCart();recalcPOS();
+};
+
+window.changeQty=function(idx,delta){
+  cart[idx].qty=Math.max(1,cart[idx].qty+delta);
+  renderCart();recalcPOS();
+};
+
+window.renderCart=function(){
+  const el=document.getElementById("cart-items");
+  if(!cart.length){el.innerHTML="<div style="text-align:center;color:var(--m);font-size:10px;padding:20px">Carrito vacío</div>";return;}
+  el.innerHTML=cart.map((c,i)=>`<div class="cart-item"><span class="ci-name">${c.nombre}</span><div class="ci-qty"><button onclick="changeQty(${i},-1)">−</button><span style="font-size:10px;min-width:18px;text-align:center">${c.qty}</span><button onclick="changeQty(${i},1)">+</button></div><span class="ci-price">${fmt(c.precio*c.qty)}</span><button onclick="removeFromCart(${i})" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:10px">✕</button></div>`).join("");
+};
+
+window.recalcPOS=function(){
+  const tipoCliente=document.getElementById("pos-tipo-cliente").value;
+  const tipoEnvio=document.getElementById("pos-tipo-envio").value;
+  const tipoInfo=cfg.tipos_cliente[tipoCliente]||{};
+
+  // Subtotal
+  const subtotal=cart.reduce((s,c)=>s+c.precio*c.qty,0);
+
+  // Descuento por compra (escalonado)
+  let descPct=0,descCompra=0;
+  if(tipoInfo.descuento_compra!==false){
+    const niveles=cfg.descuentos?.por_compra?.niveles||{};
+    Object.values(niveles).forEach(n=>{
+      if(n.activo && subtotal>=n.monto_minimo && (!n.monto_maximo || subtotal<=n.monto_maximo)){
+        if(n.porcentaje>descPct) descPct=n.porcentaje;
+      }
+    });
+    descCompra=subtotal*descPct/100;
+  }
+
+  // Descuento por fidelidad (2% solo particular/a_domicilio)
+  let descFidelidad=0;
+  const fidelidad=cfg.descuentos?.fidelidad||{};
+  if(fidelidad.activo && tipoInfo.descuento_fidelidad!==false){
+    descFidelidad=(subtotal-descCompra)*fidelidad.porcentaje/100;
+  }
+
+  // Descuento cupón
+  let descCupon=0;
+  if(posCupon){
+    if(posCupon.porcentaje>0) descCupon=(subtotal-descCompra-descFidelidad)*posCupon.porcentaje/100;
+    else if(posCupon.desc_fijo>0) descCupon=Math.min(posCupon.desc_fijo,subtotal-descCompra-descFidelidad);
+  }
+
+  // Costo de envío
+  let envioCosto=0,envioZona="";
+  const envioInfo=cfg.envio?.tipos_envio?.[tipoEnvio]||{};
+  if(envioInfo && envioInfo.activo!==false){
+    envioCosto=Number(envioInfo.costo||0);
+    envioZona=envioInfo.zona||envioInfo.nombre||"";
+  }
+
+  const total=subtotal-descCompra-descFidelidad-descCupon+envioCosto;
+
+  // Update UI
+  document.getElementById("ps-subtotal").textContent=fmt(subtotal);
+  document.getElementById("ps-total").textContent=fmt(total);
+
+  const descCompraRow=document.getElementById("ps-desc-compra-row");
+  const descFidelidadRow=document.getElementById("ps-desc-fidelidad-row");
+  const descCuponRow=document.getElementById("ps-desc-cupon-row");
+  const envioRow=document.getElementById("ps-envio-row");
+
+  if(descCompra>0){descCompraRow.style.display="flex";document.getElementById("ps-desc-pct").textContent=descPct;document.getElementById("ps-desc-compra").textContent="-"+fmt(descCompra);}
+  else{descCompraRow.style.display="none";}
+
+  if(descFidelidad>0){descFidelidadRow.style.display="flex";document.getElementById("ps-desc-fidelidad").textContent="-"+fmt(descFidelidad);}
+  else{descFidelidadRow.style.display="none";}
+
+  if(descCupon>0){descCuponRow.style.display="flex";document.getElementById("ps-desc-cupon").textContent="-"+fmt(descCupon);}
+  else{descCuponRow.style.display="none";}
+
+  if(envioCosto>0){envioRow.style.display="flex";document.getElementById("ps-envio-zona").textContent=envioZona;document.getElementById("ps-envio").textContent=fmt(envioCosto);}
+  else{envioRow.style.display="none";}
+};
+
+window.clearCart=function(){cart=[];posCupon=null;renderCart();recalcPOS();};
+
+window.submitPOS=function(){
+  if(!cart.length){alert("El carrito está vacío");return;}
+  const tipoCliente=document.getElementById("pos-tipo-cliente").value;
+  const cliId=document.getElementById("pos-cliente").value;
+  const tipoEnvio=document.getElementById("pos-tipo-envio").value;
+  const metodoPago=document.getElementById("pos-pago").value;
+  const tipoInfo=cfg.tipos_cliente[tipoCliente]||{};
+
+  const subtotal=cart.reduce((s,c)=>s+c.precio*c.qty,0);
+  let descPct=0,descCompra=0;
+  if(tipoInfo.descuento_compra!==false){
+    const niveles=cfg.descuentos?.por_compra?.niveles||{};
+    Object.values(niveles).forEach(n=>{if(n.activo && subtotal>=n.monto_minimo && (!n.monto_maximo || subtotal<=n.monto_maximo)){if(n.porcentaje>descPct)descPct=n.porcentaje;}});
+    descCompra=subtotal*descPct/100;
+  }
+  let descFidelidad=0;
+  const fidelidad=cfg.descuentos?.fidelidad||{};
+  if(fidelidad.activo && tipoInfo.descuento_fidelidad!==false){descFidelidad=(subtotal-descCompra)*fidelidad.porcentaje/100;}
+  let descCupon=0;
+  if(posCupon){if(posCupon.porcentaje>0)descCupon=(subtotal-descCompra-descFidelidad)*posCupon.porcentaje/100;else if(posCupon.desc_fijo>0)descCupon=Math.min(posCupon.desc_fijo,subtotal-descCompra-descFidelidad);}
+  const envioInfo=cfg.envio?.tipos_envio?.[tipoEnvio]||{};
+  const envioCosto=Number(envioInfo.costo||0);
+  const total=subtotal-descCompra-descFidelidad-descCupon+envioCosto;
+
+  const id=genId();
+  const compraData={
+    id,
+    fecha:now(),
+    numero_recibo:"R-"+id.toUpperCase(),
+    tipo:metodoPago==="credito_cxc"?"Venta a crédito":"Venta contado",
+    estado:metodoPago==="credito_cxc"?"pendiente":"pagada",
+    cliente:cliId||"",
+    tipo_cliente:tipoCliente,
+    metodo_pago:metodoPago,
+    tipo_envio:tipoEnvio,
+    subtotal:fmtN(subtotal),
+    descuento_compra:fmtN(descCompra),
+    descuento_compra_pct:descPct,
+    descuento_fidelidad:fmtN(descFidelidad),
+    descuento_cupon:fmtN(descCupon),
+    descuento_total:fmtN(descCompra+descFidelidad+descCupon),
+    envio:{tipo:tipoEnvio,zona:envioInfo.zona||"",costo:fmtN(envioCosto)},
+    total:fmtN(total),
+    monto_pagado:metodoPago==="credito_cxc"?0:fmtN(total),
+    saldo_pendiente:metodoPago==="credito_cxc"?fmtN(total):0,
+    items:cart.reduce((o,c,i)=>{o["item_"+i]={nombre:c.nombre,cantidad:c.qty,precio:fmtN(c.precio),subtotal:fmtN(c.precio*c.qty)};return o;},{})
+  };
+
+  // Save purchase
+  const cliRef=cliId?ref(db,"C/"+cliId+"/compras/"+id):null;
+  const transRef=push(ref(db,"T"));
+  const rcptRef=push(ref(db,"recibos"));
+
+  const promises=[set(push(ref(db,"R")),compraData),set(transRef,{fecha:now(),cliente:cliId,tipo:"venta",recibo:compraData.numero_recibo,monto:fmtN(total),estado:compraData.estado})];
+  if(cliId){
+    promises.push(update(ref(db,"C/"+cliId),{total_compras:(clientes.find(c=>c.id===cliId)?.total_compras||0)+1,monto_total:fmtN(Number(clientes.find(c=>c.id===cliId)?.monto_total||0)+total),ultima_compra:now(),ultima_compra_id:id}));
+    promises.push(set(cliRef,compraData));
+    if(metodoPago==="credito_cxc"){
+      promises.push(set(push(ref(db,"X")),{cliente:cliId,compra_id:id,monto:fmtN(total),fecha:now(),estado:"pendiente"}));
+    }
+  }
+
+  // Update stock
+  cart.forEach(c=>{
+    const p=productos.find(p=>p.id===c.id);
+    if(p){
+      promises.push(update(ref(db,"P/"+c.id),{stock:Math.max(0,(p.stock||0)-c.qty)}));
+    }
+  });
+
+  // Update coupon usage
+  if(posCupon && posCupon.id){
+    promises.push(update(ref(db,"CP/"+posCupon.id),{usados:(posCupon.usados||0)+1}));
+  }
+
+  Promise.all(promises).then(()=>{
+    renderReceipt(compraData);
+    clearCart();
+  }).catch(e=>alert("Error: "+e.message));
+};
+
+// ═══ RECEIPT RENDERING ═══
+function renderReceipt(data){
+  const el=document.getElementById("pos-receipt-area");
+  const items=Object.values(data.items||{});
+  el.innerHTML=`
+  <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:16px;font-size:10px;font-family:monospace">
+  <div style="text-align:center;margin-bottom:8px">
+    <b style="font-size:13px;color:var(--dg)">PG del Campo</b><br>
+    <span style="font-size:8px;color:var(--m)">Productos Globales del Campo — Jinotepe, Carazo</span><br>
+    <span style="font-size:8px;color:var(--m)">RUC: 0452907730000U</span>
+  </div>
+  <hr style="border-color:var(--bd)">
+  <div>Recibo: <b>${data.numero_recibo}</b></div>
+  <div>Fecha: ${new Date(data.fecha).toLocaleString("es-NI")}</div>
+  <div>Cliente: ${clientes.find(c=>c.id===data.cliente)?.nombre||"—"} (${data.tipo_cliente})</div>
+  <div>Método: ${data.metodo_pago}</div>
+  <div>Envío: ${data.envio?.zona||"Tienda"}</div>
+  <hr style="border-color:var(--bd)">
+  <table style="width:100%;font-size:9px">
+    <tr style="color:var(--dg)"><th>Cant</th><th>Producto</th><th>Precio</th><th>Subt</th></tr>
+    ${items.map(i=>`<tr><td>${i.cantidad}</td><td>${i.nombre}</td><td>${fmt(i.precio)}</td><td>${fmt(i.subtotal)}</td></tr>`).join("")}
+  </table>
+  <hr style="border-color:var(--bd)">
+  <div>Subtotal: ${fmt(data.subtotal)}</div>
+  ${Number(data.descuento_compra)>0?`<div style="color:var(--gn)">Desc. compra (${data.descuento_compra_pct}%): -${fmt(data.descuento_compra)}</div>`:""}
+  ${Number(data.descuento_fidelidad)>0?`<div style="color:var(--gn)">Desc. fidelidad (2%): -${fmt(data.descuento_fidelidad)}</div>`:""}
+  ${Number(data.descuento_cupon)>0?`<div style="color:var(--gn)">Desc. cupón: -${fmt(data.descuento_cupon)}</div>`:""}
+  ${Number(data.envio?.costo)>0?`<div>Envío (${data.envio.zona}): ${fmt(data.envio.costo)}</div>`:""}
+  <hr style="border-color:var(--dg)">
+  <div style="font-size:14px;font-weight:900;color:var(--dg)">Total: ${fmt(data.total)}</div>
+  <div>Pagado: ${fmt(data.monto_pagado)}</div>
+  ${Number(data.saldo_pendiente)>0?`<div style="color:var(--rd)">Saldo pendiente: ${fmt(data.saldo_pendiente)}</div>`:""}
+  <hr style="border-color:var(--bd)">
+  <div style="text-align:center;font-size:8px;color:var(--m)">LaFise Bancentro — Cta 140051265 | ACH 5797 3097</div>
+  <div style="text-align:center;font-size:8px;color:var(--m);margin-top:4px">¡Gracias por su compra!</div>
+  </div>`;
+}
+
+// ═══ CLIENT RENDERING ═══
+function renderClients(){
+  const el=document.getElementById("cliBody");
+  el.innerHTML=clientes.map(c=>{
+    const tc=cfg.tipos_cliente[c.tipo_cliente||"particular"]||{};
+    const tcBadge=`<span class="tipo-cliente-card" style="background:${tc.color||'#1b382b'}22;color:${tc.color||'#1b382b'}"><i class="fas fa-${tc.icono||'user'}"></i> ${tc.nombre||c.tipo_cliente||"—"}</span>`;
+    const onBadge=c.tienda_online?.activa?"<span class="badge active-badge">Online</span>":"<span class="badge inactive-badge">—</span>";
+    return `<tr><td>${c.nombre||"—"}</td><td>${c.telefono||"—"}</td><td>${tcBadge}</td><td>${c.zona||"—"}</td><td>${c.total_compras||0}</td><td>${fmt(c.monto_total)}</td><td>${onBadge}</td><td><button class="btn-sm btn" onclick="editCli('${c.id}')">✏️</button> <button class="btn-sm btn red" onclick="delCli('${c.id}')">🗑️</button> <button class="btn-sm btn gold" onclick="showStmt('${c.id}')">📋</button></td></tr>`;
+  }).join("");
+}
+
+function populateClientSelects(){
+  ["pos-cliente","payCli"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML="<option value=">— Seleccionar —</option>"+clientes.map(c=>`<option value="${c.id}">${c.nombre} (${c.telefono||"—"})</option>`).join("");
+  });
+}
+
+// ═══ PRODUCTS RENDERING ═══
+function renderProducts(){
+  const el=document.getElementById("prodBody");
+  el.innerHTML=productos.map(p=>{const margin=((p.precio||0)-(p.costo||0))/(p.precio||1)*100;return`<tr><td>${p.nombre||p.id}</td><td>${fmt(p.costo)}</td><td>${fmt(p.precio)}</td><td>${margin.toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.categoria||"—"}</td><td><button class="btn-sm btn" onclick="editProd('${p.id}')">✏️</button> <button class="btn-sm btn red" onclick="delProd('${p.id}')">🗑️</button></td></tr>`}).join("");
+}
+
+// ═══ CxC RENDERING ═══
+function renderCxC(){
+  const el=document.getElementById("cxcBody");
+  const pendientes=cuentas.filter(c=>c.estado==="pendiente");
+  const totalPen=pendientes.reduce((s,c)=>s+Number(c.monto||0),0);
+  document.getElementById("cxc-total").textContent=fmt(totalPen);
+  document.getElementById("cxc-count").textContent=pendientes.length;
+  el.innerHTML=pendientes.map(c=>{const cli=clientes.find(x=>x.id===c.cliente);return`<tr><td>${cli?.nombre||c.cliente}</td><td>${cfg.tipos_cliente[cli?.tipo_cliente]?.nombre||"—"}</td><td>${fmt(c.monto)}</td><td>${fmt(cli?.limite_credito||0)}</td><td>${c.fecha?new Date(c.fecha).toLocaleDateString("es-NI"):"—"}</td><td><button class="btn-sm btn gold" onclick="openModal('modal-pay');document.getElementById('payCli').value='${c.cliente}';document.getElementById('payAmt').value='${c.monto}'">💳</button> <button class="btn-sm btn" onclick="showStmt('${c.cliente}')">📋</button></td></tr>`}).join("");
+}
+
+// ═══ VENTAS RENDERING ═══
+function renderVentas(){
+  const el=document.getElementById("ventasBody");
+  el.innerHTML=compras.slice().reverse().map(c=>{const cli=clientes.find(x=>x.id===c.cliente);return`<tr><td>${c.fecha?new Date(c.fecha).toLocaleDateString("es-NI"):"—"}</td><td>${c.numero_recibo||"—"}</td><td>${cli?.nombre||"—"}</td><td>${c.tipo_cliente||"—"}</td><td>${fmt(c.subtotal)}</td><td>${fmt(c.descuento_total)}</td><td>${fmt(c.envio?.costo||0)}</td><td>${fmt(c.total)}</td><td>${c.metodo_pago||"—"}</td><td><span class="badge ${c.estado==="pagada"?"active-badge":"warn-badge"}">${c.estado}</span></td></tr>`}).join("");
+}
+
+// ═══ TRANSACTIONS RENDERING ═══
+function renderTrans(){
+  const el=document.getElementById("transBody");
+  el.innerHTML=transacciones.slice().reverse().map(t=>`<tr><td>${t.fecha?new Date(t.fecha).toLocaleDateString("es-NI"):"—"}</td><td>${t.cliente||t.codigo||"—"}</td><td>${t.tipo||"—"}</td><td>${t.recibo||"—"}</td><td>${fmt(t.monto)}</td><td><span class="badge ${t.estado==="pagada"?"active-badge":"warn-badge"}">${t.estado||"—"}</span></td><td><button class="btn-sm btn" onclick="viewTransDetail('${t.id}')">👁️</button></td></tr>`).join("");
+}
+
+// ═══ EXPENSES RENDERING ═══
+function renderExpenses(){
+  const el=document.getElementById("expenseBody");
+  el.innerHTML=gastos.slice().reverse().map(g=>`<tr><td>${g.fecha||"—"}</td><td>${g.descripcion||"—"}</td><td>${g.categoria||"—"}</td><td>${fmt(g.monto)}</td><td>${g.recurrente||"no"}</td><td><button class="btn-sm btn red" onclick="delExpense('${g.id}')">🗑️</button></td></tr>`).join("");
+  const totalGas=gastos.reduce((s,g)=>s+Number(g.monto||0),0);
+  document.getElementById("kpi-gastos").textContent=fmt(totalGas);
+}
+
+// ═══ SUPPLIERS RENDERING ═══
+function renderSuppliers(){
+  const el=document.getElementById("supplierBody");
+  el.innerHTML=proveedores.map(s=>`<tr><td>${s.nombre||"—"}</td><td>${s.telefono||"—"}</td><td>${s.categoria||"—"}</td><td><button class="btn-sm btn" onclick="editSupplier('${s.id}')">✏️</button> <button class="btn-sm btn red" onclick="delSupplier('${s.id}')">🗑️</button></td></tr>`).join("");
+  const sel=document.getElementById("expSupplier");
+  sel.innerHTML="<option value=">— Sin proveedor —</option>"+proveedores.map(s=>`<option value="${s.id}">${s.nombre}</option>`).join("");
+}
+
+// ═══ SELLERS RENDERING ═══
+function renderSellers(){
+  const el=document.getElementById("sellBody");
+  el.innerHTML=vendedores.map(v=>`<tr><td>${v.nombre||"—"}</td><td>${v.telefono||"—"}</td><td>${fmt(v.meta||0)}</td><td>${fmt(v.vendido||0)}</td><td>${v.comision||0}%</td><td><button class="btn-sm btn" onclick="editSeller('${v.id}')">✏️</button> <button class="btn-sm btn red" onclick="delSeller('${v.id}')">🗑️</button></td></tr>`).join("");
+}
+
+// ═══ COUPONS RENDERING ═══
+function renderCoupons(){
+  const el=document.getElementById("couponBody");
+  el.innerHTML=cupones.filter(c=>c.activo!==false).map(c=>{const desc=c.porcentaje>0?c.porcentaje+"%":fmt(c.desc_fijo||0);return`<tr><td><b>${c.codigo||"—"}</b></td><td>${desc}</td><td>${fmt(c.monto_minimo||0)}</td><td>${c.usados||0}/${c.usos_maximos||0}</td><td>${c.expira||"—"}</td><td><button class="btn-sm btn red" onclick="toggleCoupon('${c.id}',false)">⛔</button></td></tr>`}).join("");
+}
+
+// ═══ INICIO KPIs ═══
+function renderInicio(){
+  const hoy=today();
+  const ventasHoy=compras.filter(c=>c.fecha && c.fecha.startsWith(hoy));
+  const totalHoy=ventasHoy.reduce((s,c)=>s+Number(c.total||0),0);
+  document.getElementById("kpi-ventas-hoy").textContent=fmt(totalHoy);
+  document.getElementById("kpi-ventas-count").textContent=ventasHoy.length+" transacciones";
+  document.getElementById("kpi-prod").textContent=productos.length;
+  document.getElementById("kpi-cli").textContent=clientes.length;
+  const totalGas=gastos.filter(g=>g.fecha && g.fecha.startsWith(hoy.slice(0,7))).reduce((s,g)=>s+Number(g.monto||0),0);
+  document.getElementById("kpi-gastos").textContent=fmt(totalGas);
+  const totalCxC=cuentas.filter(c=>c.estado==="pendiente").reduce((s,c)=>s+Number(c.monto||0),0);
+  document.getElementById("kpi-cxc").textContent=fmt(totalCxC);
+  document.getElementById("kpi-cxc-count").textContent=cuentas.filter(c=>c.estado==="pendiente").length+" clientes";
+  document.getElementById("kpi-flujo").textContent=fmt(totalHoy-totalGas);
+}
+
+// ═══ CONFIG RENDERING ═══
+function renderConfig(){
+  // Envío
+  const envList=document.getElementById("cfgEnvioList");
+  const tipos=cfg.envio?.tipos_envio||{};
+  envList.innerHTML=Object.entries(tipos).map(([k,v])=>`<div class="cfg-row"><span class="cfg-label">${v.nombre||k}</span><span class="cfg-value">${fmt(v.costo)}</span><span class="cfg-value">${v.zona||"—"}</span><div class="cfg-actions"><div class="toggle"><input type="checkbox" ${v.activo!==false?"checked":""} onchange="toggleEnvio('${k}',this.checked)"><span class="slider"></span></div><button class="btn-sm btn red" onclick="delEnvio('${k}')">🗑️</button></div></div>`).join("");
+
+  // Pagos
+  const payList=document.getElementById("cfgPagoList");
+  const metodos=cfg.pagos?.metodos||{};
+  payList.innerHTML=Object.entries(metodos).map(([k,v])=>`<div class="cfg-row"><span class="cfg-label">${v.nombre||k}</span><span class="cfg-value" style="font-size:8px">${v.codigo||""}</span><div class="cfg-actions"><div class="toggle"><input type="checkbox" ${v.activo!==false?"checked":""} onchange="togglePago('${k}',this.checked)"><span class="slider"></span></div></div></div>`).join("");
+
+  // Descuentos por compra
+  const descList=document.getElementById("cfgDescList");
+  const niveles=cfg.descuentos?.por_compra?.niveles||{};
+  descList.innerHTML=Object.entries(niveles).map(([k,v])=>`<div class="cfg-row"><span class="cfg-label">${v.nombre||k}</span><span class="cfg-value">${v.porcentaje}% (>${fmt(v.monto_minimo)})</span><div class="cfg-actions"><div class="toggle"><input type="checkbox" ${v.activo!==false?"checked":""} onchange="toggleDescNivel('${k}',this.checked)"><span class="slider"></span></div><button class="btn-sm btn red" onclick="delDescNivel('${k}')">🗑️</button></div></div>`).join("");
+
+  // Fidelidad
+  const fidInfo=document.getElementById("cfgFidelidadInfo");
+  const fid=cfg.descuentos?.fidelidad||{};
+  fidInfo.innerHTML=`<div class="cfg-row"><span class="cfg-label">Desc. por Fidelidad</span><span class="cfg-value">${fid.porcentaje||0}%</span><span class="cfg-value" style="font-size:8px">Aplica: ${(fid.aplica_a||[]).join(", ")}</span></div>`;
+
+  // Tipos de cliente
+  const tiposList=document.getElementById("cfgTiposList");
+  const tc=cfg.tipos_cliente||{};
+  tiposList.innerHTML=Object.entries(tc).map(([k,v])=>{const flags=[];if(v.descuento_compra)flags.push("Compra");if(v.descuento_fidelidad)flags.push("Fidelidad");if(v.credito_disponible)flags.push("CxC");if(v.costo_envio_automatico)flags.push("Envío auto");return`<div class="cfg-row" style="background:${v.color||'#1b382b'}11;border-left:3px solid ${v.color||'#1b382b'}"><span class="cfg-label"><i class="fas fa-${v.icono||'user'}" style="color:${v.color||'#1b382b'}"></i> ${v.nombre||k}</span><span class="cfg-value" style="font-size:8px">${flags.join(" | ")}</span><div class="cfg-actions"><button class="btn-sm btn" onclick="editTipoCliente('${k}')">✏️</button><button class="btn-sm btn red" onclick="delTipoCliente('${k}')">🗑️</button></div></div>`}).join("");
+
+  // Tienda online
+  const tl=cfg.tienda_online||{};
+  document.getElementById("cfgTlNombre").value=tl.nombre||"";
+  document.getElementById("cfgTlUrl").value=tl.url_base||"";
+  document.getElementById("cfgTlWa").value=tl.whatsapp_negocio||"";
+  document.getElementById("cfgTlActivo").checked=tl.activa!==false;
+  document.getElementById("cfgTlMsg").value=tl.mensaje_bienvenida||"";
+
+  // Refresh POS selects
+  refreshPOSEnvioSelect();
+  refreshPOSPagoSelect();
+}
+
+function refreshPOSEnvioSelect(){
+  const el=document.getElementById("pos-tipo-envio");
+  const tipos=cfg.envio?.tipos_envio||{};
+  const icons={domicilio:"🛵",recoger:"📦",convenir:"🚛"};
+  el.innerHTML=Object.entries(tipos).filter(([k,v])=>v.activo!==false).map(([k,v])=>{const icon=k.includes("domicilio")?"🛵":k.includes("recoger")?"📦":"🚛";return`<option value="${k}">${icon} ${v.nombre} ${v.costo>0?"("+fmt(v.costo)+")":""}</option>`}).join("");
+}
+
+function refreshPOSPagoSelect(){
+  const el=document.getElementById("pos-pago");
+  const metodos=cfg.pagos?.metodos||{};
+  const icons={efectivo:"💵",transferencia:"🏦",lafise:"📱",credito:"💳",contra:"📦"};
+  el.innerHTML=Object.entries(metodos).filter(([k,v])=>v.activo!==false).map(([k,v])=>{const icon=k.includes("efectivo")?"💵":k.includes("transferencia")?"🏦":k.includes("lafise")?"📱":k.includes("credito")?"💳":"📦";return`<option value="${v.codigo||k}">${icon} ${v.nombre}</option>`}).join("");
+}
+
+// ═══ CONFIG CRUD ═══
+window.toggleEnvio=function(key,val){update(ref(db,"configuracion/envio/tipos_envio/"+key),{activo:val})};
+window.delEnvio=function(key){if(confirm("Eliminar este tipo de envío?"))remove(ref(db,"configuracion/envio/tipos_envio/"+key))};
+window.saveEnvioTipo=function(){
+  const key=document.getElementById("cfgEnvKey").value||"env_"+genId();
+  set(ref(db,"configuracion/envio/tipos_envio/"+key),{
+    nombre:document.getElementById("cfgEnvNombre").value,
+    costo:Number(document.getElementById("cfgEnvCosto").value||0),
+    zona:document.getElementById("cfgEnvZona").value,
+    activo:document.getElementById("cfgEnvActivo").checked
+  });
+};
+window.togglePago=function(key,val){update(ref(db,"configuracion/pagos/metodos/"+key),{activo:val})};
+window.savePagoMetodo=function(){
+  const code=document.getElementById("cfgPayCode").value||"pay_"+genId();
+  set(ref(db,"configuracion/pagos/metodos/"+code),{
+    nombre:document.getElementById("cfgPayNombre").value,
+    codigo:code,
+    descripcion:document.getElementById("cfgPayDesc").value,
+    requiere_comprobante:document.getElementById("cfgPayComp").checked,
+    activo:document.getElementById("cfgPayActivo").checked
+  });
+};
+window.toggleDescNivel=function(key,val){update(ref(db,"configuracion/descuentos/por_compra/niveles/"+key),{activo:val})};
+window.delDescNivel=function(key){if(confirm("Eliminar este nivel?"))remove(ref(db,"configuracion/descuentos/por_compra/niveles/"+key))};
+window.saveDescNivel=function(){
+  const key="nivel_"+genId();
+  set(ref(db,"configuracion/descuentos/por_compra/niveles/"+key),{
+    nombre:document.getElementById("cfgDcNombre").value,
+    monto_minimo:Number(document.getElementById("cfgDcMin").value||0),
+    monto_maximo:null,
+    porcentaje:Number(document.getElementById("cfgDcPct").value||0),
+    activo:document.getElementById("cfgDcActivo").checked
+  });
+};
+window.saveFidelidad=function(){
+  update(ref(db,"configuracion/descuentos/fidelidad"),{
+    porcentaje:Number(document.getElementById("cfgFidPct").value||2),
+    activo:document.getElementById("cfgFidActivo").checked
+  });
+};
+window.saveTipoCliente=function(){
+  const code=document.getElementById("cfgTCCode").value||"tc_"+genId();
+  set(ref(db,"configuracion/tipos_cliente/"+code),{
+    codigo:code,
+    nombre:document.getElementById("cfgTCNombre").value,
+    descripcion:document.getElementById("cfgTCDesc").value,
+    descuento_compra:document.getElementById("cfgTCDescCompra").checked,
+    descuento_fidelidad:document.getElementById("cfgTCDescFid").checked,
+    credito_disponible:document.getElementById("cfgTCCredito").checked,
+    tienda_online:document.getElementById("cfgTCTienda").checked,
+    envio_domicilio:document.getElementById("cfgTCEnvio").checked,
+    costo_envio_automatico:document.getElementById("cfgTCEnvioAuto").checked,
+    icono:document.getElementById("cfgTCIcon").value,
+    color:document.getElementById("cfgTCColor").value
+  });
+};
+window.editTipoCliente=function(key){
+  const tc=cfg.tipos_cliente[key];
+  if(!tc)return;
+  document.getElementById("cfgTCNombre").value=tc.nombre||"";
+  document.getElementById("cfgTCCode").value=key;
+  document.getElementById("cfgTCIcon").value=tc.icono||"user";
+  document.getElementById("cfgTCColor").value=tc.color||"#1b382b";
+  document.getElementById("cfgTCDesc").value=tc.descripcion||"";
+  document.getElementById("cfgTCDescCompra").checked=!!tc.descuento_compra;
+  document.getElementById("cfgTCDescFid").checked=!!tc.descuento_fidelidad;
+  document.getElementById("cfgTCCredito").checked=!!tc.credito_disponible;
+  document.getElementById("cfgTCTienda").checked=!!tc.tienda_online;
+  document.getElementById("cfgTCEnvio").checked=!!tc.envio_domicilio;
+  document.getElementById("cfgTCEnvioAuto").checked=!!tc.costo_envio_automatico;
+};
+window.delTipoCliente=function(key){if(confirm("Eliminar tipo de cliente "+key+"?"))remove(ref(db,"configuracion/tipos_cliente/"+key))};
+window.saveTiendaOnline=function(){
+  update(ref(db,"configuracion/tienda_online"),{
+    activa:document.getElementById("cfgTlActivo").checked,
+    nombre:document.getElementById("cfgTlNombre").value,
+    url_base:document.getElementById("cfgTlUrl").value,
+    whatsapp_negocio:document.getElementById("cfgTlWa").value,
+    mensaje_bienvenida:document.getElementById("cfgTlMsg").value
+  });
+};
+window.toggleCoupon=function(id,val){update(ref(db,"CP/"+id),{activo:val})};
+
+// ═══ PRODUCT CRUD ═══
+window.editProd=function(id){
+  const p=productos.find(x=>x.id===id);if(!p)return;
+  document.getElementById("pid").value=id;
+  document.getElementById("pn").value=p.nombre||"";
+  document.getElementById("pi").value=p.imagen||"";
+  document.getElementById("pd").value=p.descripcion||"";
+  document.getElementById("pc").value=p.costo||0;
+  document.getElementById("pp").value=p.precio||0;
+  document.getElementById("ps").value=p.stock||0;
+  document.getElementById("pcat").value=p.categoria||"";
+  document.getElementById("psku").value=p.sku||"";
+};
+window.delProd=function(id){if(confirm("Eliminar producto?"))remove(ref(db,"P/"+id))};
+window.resetProd=function(){document.getElementById("prod").reset();document.getElementById("pid").value=""};
+document.getElementById("prod").onsubmit=function(e){
+  e.preventDefault();
+  const id=document.getElementById("pid").value||genId();
+  set(ref(db,"P/"+id),{nombre:document.getElementById("pn").value,imagen:document.getElementById("pi").value,descripcion:document.getElementById("pd").value,costo:Number(document.getElementById("pc").value||0),precio:Number(document.getElementById("pp").value||0),stock:Number(document.getElementById("ps").value||0),categoria:document.getElementById("pcat").value,sku:document.getElementById("psku").value});
+  document.getElementById("prod").reset();
+};
+
+// ═══ CLIENT CRUD ═══
+window.editCli=function(id){
+  const c=clientes.find(x=>x.id===id);if(!c)return;
+  document.getElementById("cliId").value=id;
+  document.getElementById("cliName").value=c.nombre||"";
+  document.getElementById("cliPhone").value=c.telefono||"";
+  document.getElementById("cliAddr").value=c.direccion||"";
+  document.getElementById("cliZone").value=c.zona||"Jinotepe";
+  document.getElementById("cliTipo").value=c.tipo_cliente||"particular";
+  document.getElementById("cliCredito").value=c.limite_credito||0;
+  document.getElementById("cliCreditoActivo").checked=!!(c.limite_credito>0);
+  document.getElementById("cliTiendaOnline").checked=c.tienda_online?.activa!==false;
+};
+window.delCli=function(id){if(confirm("Eliminar cliente?"))remove(ref(db,"C/"+id))};
+window.resetCli=function(){document.getElementById("cliForm").reset();document.getElementById("cliId").value=""};
+document.getElementById("cliForm").onsubmit=function(e){
+  e.preventDefault();
+  const id=document.getElementById("cliId").value||genId();
+  const data={nombre:document.getElementById("cliName").value,telefono:document.getElementById("cliPhone").value,direccion:document.getElementById("cliAddr").value,zona:document.getElementById("cliZone").value,tipo_cliente:document.getElementById("cliTipo").value,limite_credito:Number(document.getElementById("cliCredito").value||0),saldo_credito:0,total_compras:0,monto_total:0,fecha_registro:now(),tienda_online:{activa:document.getElementById("cliTiendaOnline").checked,fecha_registro:now(),pedidos_online:0,notificaciones:true}};
+  if(!document.getElementById("cliId").value){data.fidelidad={elegible:(["particular","a_domicilio"].includes(data.tipo_cliente)),compras_historicas:0,monto_historico:0,desde:now()}}
+  set(ref(db,"C/"+id),data);
+  document.getElementById("cliForm").reset();
+};
+
+// ═══ SUPPLIER CRUD ═══
+window.editSupplier=function(id){const s=proveedores.find(x=>x.id===id);if(!s)return;document.getElementById("supId").value=id;document.getElementById("supName").value=s.nombre||"";document.getElementById("supPhone").value=s.telefono||"";document.getElementById("supEmail").value=s.email||"";document.getElementById("supAddress").value=s.direccion||"";document.getElementById("supCategory").value=s.categoria||"";document.getElementById("supNotes").value=s.notas||""};
+window.delSupplier=function(id){if(confirm("Eliminar proveedor?"))remove(ref(db,"SUP/"+id))};
+window.resetSupplier=function(){document.getElementById("supplierForm").reset();document.getElementById("supId").value=""};
+document.getElementById("supplierForm").onsubmit=function(e){e.preventDefault();const id=document.getElementById("supId").value||genId();set(ref(db,"SUP/"+id),{nombre:document.getElementById("supName").value,telefono:document.getElementById("supPhone").value,email:document.getElementById("supEmail").value,direccion:document.getElementById("supAddress").value,categoria:document.getElementById("supCategory").value,notas:document.getElementById("supNotes").value});document.getElementById("supplierForm").reset()};
+
+// ═══ SELLER CRUD ═══
+window.editSeller=function(id){const v=vendedores.find(x=>x.id===id);if(!v)return;document.getElementById("sellId").value=id;document.getElementById("sellName").value=v.nombre||"";document.getElementById("sellPhone").value=v.telefono||"";document.getElementById("sellMeta").value=v.meta||0;document.getElementById("sellComision").value=v.comision||0};
+window.delSeller=function(id){if(confirm("Eliminar vendedor?"))remove(ref(db,"SELL/"+id))};
+document.getElementById("sellForm").onsubmit=function(e){e.preventDefault();const id=document.getElementById("sellId").value||genId();set(ref(db,"SELL/"+id),{nombre:document.getElementById("sellName").value,telefono:document.getElementById("sellPhone").value,meta:Number(document.getElementById("sellMeta").value||0),comision:Number(document.getElementById("sellComision").value||0),vendido:0});document.getElementById("sellForm").reset()};
+
+// ═══ EXPENSE CRUD ═══
+document.getElementById("expenseForm").onsubmit=function(e){e.preventDefault();set(push(ref(db,"EX")),{descripcion:document.getElementById("expDesc").value,monto:Number(document.getElementById("expAmount").value||0),categoria:document.getElementById("expCat").value,proveedor:document.getElementById("expSupplier").value,recurrente:document.getElementById("expRecurring").value,fecha:document.getElementById("expDate").value||today()});document.getElementById("expenseForm").reset()};
+window.delExpense=function(id){if(confirm("Eliminar gasto?"))remove(ref(db,"EX/"+id))};
+
+// ═══ COUPON CRUD ═══
+document.getElementById("couponForm").onsubmit=function(e){
+  e.preventDefault();
+  const code=document.getElementById("cpCode").value.toUpperCase();
+  set(ref(db,"CP/"+code),{codigo:code,porcentaje:Number(document.getElementById("cpPct").value||0),desc_fijo:Number(document.getElementById("cpFixed").value||0),monto_minimo:Number(document.getElementById("cpMin").value||0),usos_maximos:Number(document.getElementById("cpMax").value||0),expira:document.getElementById("cpExp").value||"",tipo_cliente:document.getElementById("cpTipo").value,activo:document.getElementById("cpActive").checked,usados:0});
+  document.getElementById("couponForm").reset();
+};
+
+// ═══ PAYMENT MODAL ═══
+document.getElementById("payForm").onsubmit=function(e){
+  e.preventDefault();
+  const cliId=document.getElementById("payCli").value;
+  const amt=Number(document.getElementById("payAmt").value||0);
+  if(!cliId||!amt){alert("Complete los datos");return;}
+  const cli=clientes.find(c=>c.id===cliId);
+  const pendientes=cuentas.filter(c=>c.cliente===cliId && c.estado==="pendiente");
+  if(!pendientes.length){alert("No hay saldo pendiente");return;}
+  let remaining=amt;
+  const updates=[];
+  pendientes.forEach(c=>{
+    if(remaining<=0)return;
+    const cAmt=Number(c.monto||0);
+    if(remaining>=cAmt){
+      updates.push(update(ref(db,"X/"+c.id),{estado:"pagada"}));
+      remaining-=cAmt;
+    }else{
+      updates.push(update(ref(db,"X/"+c.id),{monto:fmtN(cAmt-remaining),estado:"parcial"}));
+      remaining=0;
+    }
+  });
+  updates.push(set(push(ref(db,"T")),{fecha:now(),cliente:cliId,tipo:"cobro",monto:fmtN(amt),metodo:document.getElementById("payMethod").value,referencia:document.getElementById("payRef").value,estado:"completada"}));
+  Promise.all(updates).then(()=>{closeModal("modal-pay");alert("Cobro registrado")});
+};
+
+// ═══ CLIENT STATEMENT ═══
+window.showStmt=function(cliId){
+  const cli=clientes.find(c=>c.id===cliId);
+  if(!cli)return;
+  const pendientes=cuentas.filter(c=>c.cliente===cliId);
+  const comprasCliente=compras.filter(c=>c.cliente===cliId);
+  const el=document.getElementById("stmtContent");
+  el.innerHTML=`
+  <div style="font-size:10px">
+  <b style="font-size:13px;color:var(--dg)">${cli.nombre}</b><br>
+  <span>Tel: ${cli.telefono||"—"} | Tipo: ${cfg.tipos_cliente[cli.tipo_cliente]?.nombre||"—"} | Zona: ${cli.zona||"—"}</span><br>
+  <span>Online: ${cli.tienda_online?.activa?"Sí":"No"}</span>
+  <hr style="border-color:var(--bd);margin:8px 0">
+  <b>Cuentas por cobrar:</b><br>
+  ${pendientes.length?pendientes.map(c=>`<div>${new Date(c.fecha).toLocaleDateString("es-NI")} — ${fmt(c.monto)} — <span class="badge ${c.estado==="pagada"?"active-badge":"warn-badge"}">${c.estado}</span></div>`).join(""):"<div style="color:var(--m)">Sin saldo pendiente</div>"}
+  <hr style="border-color:var(--bd);margin:8px 0">
+  <b>Últimas compras:</b><br>
+  ${comprasCliente.slice(-5).reverse().map(c=>`<div>${new Date(c.fecha).toLocaleDateString("es-NI")} | ${c.numero_recibo} | Subt: ${fmt(c.subtotal)} | Desc: ${fmt(c.descuento_total)} | Envío: ${fmt(c.envio?.costo||0)} | <b>Total: ${fmt(c.total)}</b></div>`).join("")}
+  </div>`;
+  openModal("modal-stmt");
+};
+
+// ═══ QUICK BUYER ═══
+document.getElementById("quickBuyerForm").onsubmit=function(e){
+  e.preventDefault();
+  const id=genId();
+  set(ref(db,"C/"+id),{nombre:document.getElementById("qbName").value,telefono:document.getElementById("qbPhone").value,tipo_cliente:document.getElementById("qbTipo").value,zona:"Jinotepe",limite_credito:0,saldo_credito:0,total_compras:0,monto_total:0,fecha_registro:now(),tienda_online:{activa:false},fidelidad:{elegible:["particular","a_domicilio"].includes(document.getElementById("qbTipo").value),compras_historicas:0,monto_historico:0,desde:now()}});
+  document.getElementById("pos-cliente").value=id;
+  closeModal("modal-buyer");
+};
+
+// ═══ CATALOG HELPERS ═══
+window.generateCatalogLink=function(){
+  document.getElementById("catalogLink").style.display="block";
+  document.getElementById("catalogUrl").textContent=cfg.tienda_online?.url_base||"https://pgdelcampo.kyte.app/catalogo";
+};
+window.copyCatalogLink=function(){
+  navigator.clipboard.writeText(cfg.tienda_online?.url_base||"");
+  alert("Enlace copiado");
+};
+window.shareWhatsApp=function(){
+  const url=cfg.tienda_online?.url_base||"";
+  const msg=document.getElementById("waMsg").value||"¡Visita nuestra tienda!";
+  window.open("https://wa.me/?text="+encodeURIComponent(msg+" "+url));
+};
+window.sendWhatsAppOrder=function(){
+  const num=document.getElementById("waNumber").value;
+  const msg=document.getElementById("waMsg").value;
+  if(!num){alert("Ingrese número");return;}
+  window.open("https://wa.me/"+num+"?text="+encodeURIComponent(msg));
+};
+
+// ═══ QR HELPER ═══
+window.generateQR=function(){
+  const el=document.getElementById("qrDisplay");
+  const payUrl="https://digital.lafise.com/?BANK=BLNI&ACCOUNT_NUMBER=140051265";
+  el.innerHTML=`<div style="padding:10px;text-align:center"><p style="font-size:10px;color:var(--m);margin-bottom:8px">Código de pago LaFise Digital</p><a href="${payUrl}" target="_blank" style="color:var(--dg);font-size:10px">🔗 Abrir enlace de pago</a><p style="font-size:8px;color:var(--m);margin-top:8px">Cta: 140051265 | ACH: 5797 3097</p></div>`;
+};
+
+// ═══ VARIATION HELPER ═══
+window.addVariation=function(){
+  const list=document.getElementById("variationList");
+  if(list.children.length>=3)return alert("Máximo 2 variaciones");
+  const row=document.createElement("div");
+  row.className="variation-row";
+  row.style.cssText="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px;margin-bottom:4px";
+  row.innerHTML="<input placeholder="Nombre variación"><input type="number" placeholder="Precio" step="0.01"><input type="number" placeholder="Stock">";
+  list.appendChild(row);
+};
+
+// ═══ KAI ASSISTANT ═══
+window.askKai=function(){
+  const q=document.getElementById("kai-input").value.trim();
+  if(!q)return;
+  const chat=document.getElementById("kai-chat");
+  chat.innerHTML+=`<div style="background:var(--gl);padding:8px;border-radius:8px;font-size:10px;margin-bottom:6px;margin-left:30px;text-align:right"><b style="color:var(--tx)">Tú:</b> ${q}</div>`;
+  document.getElementById("kai-input").value="";
+
+  let answer="No tengo información sobre eso.";
+  const ql=q.toLowerCase();
+  if(ql.includes("ventas")||ql.includes("vendido")){answer=`Ventas hoy: ${document.getElementById("kpi-ventas-hoy").textContent}. Total transacciones: ${document.getElementById("kpi-ventas-count").textContent}.`;}
+  else if(ql.includes("cliente")||ql.includes("comprador")){answer=`Tienes ${clientes.length} clientes registrados. ${clientes.filter(c=>c.tienda_online?.activa).length} con Tienda Online activa.`;}
+  else if(ql.includes("producto")||ql.includes("inventario")||ql.includes("stock")){answer=`${productos.length} productos en inventario. ${productos.filter(p=>(p.stock||0)<=5).length} con stock bajo (≤5).`;}
+  else if(ql.includes("envío")||ql.includes("envio")||ql.includes("domicilio")){const te=cfg.envio?.tipos_envio||{};answer=`Zonas de cobertura: ${Object.values(te).filter(t=>t.costo>0&&t.activo!==false).map(t=>t.zona+" ("+fmt(t.costo)+")").join(", ")||"Sin zonas configuradas"}.`;}
+  else if(ql.includes("descuento")||ql.includes("promoc")||ql.includes("cupon")){const n=cfg.descuentos?.por_compra?.niveles||{};answer=`Descuentos por compra: ${Object.values(n).filter(x=>x.activo).map(x=>x.porcentaje+"% > "+fmt(x.monto_minimo)).join(", ")}. Fidelidad: ${cfg.descuentos?.fidelidad?.activo?cfg.descuentos.fidelidad.porcentaje+"% (solo particular/a domicilio)":"Inactivo"}. Cupones: ${cupones.filter(c=>c.activo).length} activos.`;}
+  else if(ql.includes("pago")||ql.includes("transfer")||ql.includes("lafise")){answer=`Métodos: Efectivo, Transferencia (ACH 5797 3097), LaFise Digital/QR, Crédito CxC, Contra Entrega.`;}
+  else if(ql.includes("cxc")||ql.includes("cuenta")||ql.includes("cobrar")){answer=`CxC pendiente: ${document.getElementById("kpi-cxc").textContent}. ${document.getElementById("kpi-cxc-count").textContent}.`;}
+  else if(ql.includes("gasto")){answer=`Gastos del mes: ${document.getElementById("kpi-gastos").textContent}.`;}
+  else if(ql.includes("hola")||ql.includes("hi")){answer="¡Hola! Soy Kai, tu asistente. ¿En qué te puedo ayudar?";}
+
+  chat.innerHTML+=`<div style="background:var(--bg3);padding:8px;border-radius:8px;font-size:10px;margin-bottom:6px"><b style="color:var(--dg)">Kai:</b> ${answer}</div>`;
+  chat.scrollTop=chat.scrollHeight;
+};
+
+// ═══ Splash ═══
+setTimeout(()=>{document.querySelector(".splash").classList.add("off");document.getElementById("app").style.display="block"},1500);
+
+// ═══ Populate Supplier Select ═══
+function populateSupplierSelect(){
+  const sel=document.getElementById("expSupplier");
+  if(!sel)return;
+  sel.innerHTML="<option value=">— Sin proveedor —</option>"+proveedores.map(s=>`<option value="${s.id}">${s.nombre}</option>`).join("");
+}
+
+</script>
+</body>
+</html>
