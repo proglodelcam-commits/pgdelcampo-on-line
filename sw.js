@@ -1,5 +1,8 @@
-const CACHE_NAME = 'tienda-pg-v2';
-const ASSETS = [
+// Tienda PG en Línea — Service Worker v3
+// Estrategia: Network-first con cache fallback
+
+var CACHE_NAME = 'tienda-pg-v3';
+var ASSETS = [
   './',
   './index.html',
   './control-de-fidelidad.html',
@@ -10,29 +13,65 @@ const ASSETS = [
   './apple-touch-icon.png',
   './android-chrome-192x192.png',
   './android-chrome-512x512.png',
-  './manifest.webmanifest',
-  './LogoPGdelCampo.png',
-  './logo-pgdelcampo.png'
+  './android-chrome-192x192-maskable.png',
+  './android-chrome-512x512-maskable.png',
+  './manifest.webmanifest'
 ];
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+// Instalar: pre-cachea assets principales
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      console.log('[SW] Cacheando assets de Tienda PG en Línea');
+      return cache.addAll(ASSETS);
+    }).then(function() {
+      return self.skipWaiting();
+    })
   );
-  self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+// Activar: limpia caches viejas
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(function(key) {
+          return key !== CACHE_NAME;
+        }).map(function(key) {
+          console.log('[SW] Eliminando cache vieja:', key);
+          return caches.delete(key);
+        })
+      );
+    }).then(function() {
+      return self.clients.claim();
+    })
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+// Fetch: network-first, cache fallback
+self.addEventListener('fetch', function(event) {
+  if (event.request.method !== 'GET') return;
+
+  var url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  event.respondWith(
+    fetch(event.request).then(function(response) {
+      if (response.ok) {
+        var responseClone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(event.request, responseClone);
+        });
+      }
+      return response;
+    }).catch(function() {
+      return caches.match(event.request).then(function(cached) {
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+        return new Response('Offline', { status: 503, statusText: 'Sin conexión' });
+      });
+    })
   );
 });
