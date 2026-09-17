@@ -1,4 +1,4 @@
-const CACHE_NAME = 'club-pg-v2';
+const CACHE_NAME = 'tienda-pg-v2';
 const ASSETS = [
   './',
   './index.html',
