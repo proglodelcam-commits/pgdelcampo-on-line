@@ -1,7 +1,7 @@
 {
   "name": "Tienda PG del Campo",
   "short_name": "Club PG",
-  "description": "Club de Clientes Frecuentes de Productos Globales del Campo. Acumula estrellas, promociones exclusivas y beneficios en cada compra.",
+  "description": "Tienda en Línea de Productos Globales del Campo. Acumula estrellas, promociones exclusivas y beneficios en cada compra.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
