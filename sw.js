@@ -1,77 +1,96 @@
-// Tienda PG en Línea — Service Worker v3
-// Estrategia: Network-first con cache fallback
+/* Service worker PG del Campo - version corregida
+   Estrategia:
+   - Paginas HTML (navegacion): RED PRIMERO. Si hay internet, siempre trae la
+     version fresca (nunca sirve una pagina en blanco cacheada). Si no hay
+     internet, cae al cache.
+   - Recursos estaticos (vendor/, imagenes, css, js): CACHE PRIMERO, con
+     actualizacion en segundo plano.
+   - CACHE_VERSION versionado: al cambiar el numero se borran los caches viejos
+     automaticamente en la siguiente carga.
+*/
+const CACHE_VERSION = 'pg-campo-v3';
+const STATIC_CACHE  = CACHE_VERSION + '-static';
+const PAGES_CACHE   = CACHE_VERSION + '-pages';
 
-var CACHE_NAME = 'tienda-pg-v3';
-var ASSETS = [
+// Recursos que conviene precachear (ajusta si agregas/quitas librerias).
+const PRECACHE = [
   './',
   './index.html',
-  './control-de-fidelidad.html',
-  './favicon.ico',
-  './favicon-16x16.png',
-  './favicon-32x32.png',
-  './favicon-48x48.png',
-  './apple-touch-icon.png',
-  './android-chrome-192x192.png',
-  './android-chrome-512x512.png',
-  './android-chrome-192x192-maskable.png',
-  './android-chrome-512x512-maskable.png',
-  './manifest.webmanifest'
+  './panel.html',
+  './tienda.html',
+  './tarjeta-fidelidad.html',
+  './vendor/tailwind.js',
+  './vendor/chart.umd.min.js',
+  './vendor/qrcode.min.js',
+  './vendor/fontawesome/css/all.min.css',
+  './vendor/fonts/fonts.css'
 ];
 
-// Instalar: pre-cachea assets principales
-self.addEventListener('install', function(event) {
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      console.log('[SW] Cacheando assets de Tienda PG en Línea');
-      return cache.addAll(ASSETS);
-    }).then(function() {
-      return self.skipWaiting();
-    })
+    caches.open(STATIC_CACHE).then((cache) =>
+      // addAll falla si UN recurso da 404; usamos add individual tolerante
+      Promise.all(PRECACHE.map((url) =>
+        cache.add(url).catch(() => { /* ignorar recursos faltantes */ })
+      ))
+    )
   );
 });
 
-// Activar: limpia caches viejas
-self.addEventListener('activate', function(event) {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(key) {
-          return key !== CACHE_NAME;
-        }).map(function(key) {
-          console.log('[SW] Eliminando cache vieja:', key);
-          return caches.delete(key);
-        })
-      );
-    }).then(function() {
-      return self.clients.claim();
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k !== STATIC_CACHE && k !== PAGES_CACHE)
+          .map((k) => caches.delete(k))
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: network-first, cache fallback
-self.addEventListener('fetch', function(event) {
-  if (event.request.method !== 'GET') return;
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
 
-  var url = new URL(event.request.url);
+  const url = new URL(req.url);
+  // No interceptar Firebase / dominios externos: dejar pasar a la red.
   if (url.origin !== self.location.origin) return;
 
+  const isPage =
+    req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
+
+  if (isPage) {
+    // RED PRIMERO para paginas: evita servir HTML en blanco cacheado.
+    event.respondWith(
+      fetch(req)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(PAGES_CACHE).then((c) => c.put(req, copy));
+          return resp;
+        })
+        .catch(() =>
+          caches.match(req).then((c) => c || caches.match('./index.html'))
+        )
+    );
+    return;
+  }
+
+  // CACHE PRIMERO para estaticos (vendor, imagenes, etc.)
   event.respondWith(
-    fetch(event.request).then(function(response) {
-      if (response.ok) {
-        var responseClone = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, responseClone);
-        });
-      }
-      return response;
-    }).catch(function() {
-      return caches.match(event.request).then(function(cached) {
-        if (cached) return cached;
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-        return new Response('Offline', { status: 503, statusText: 'Sin conexión' });
-      });
+    caches.match(req).then((cached) => {
+      const network = fetch(req)
+        .then((resp) => {
+          if (resp && resp.status === 200) {
+            const copy = resp.clone();
+            caches.open(STATIC_CACHE).then((c) => c.put(req, copy));
+          }
+          return resp;
+        })
+        .catch(() => cached);
+      return cached || network;
     })
   );
 });
