@@ -685,25 +685,11 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
   </section>
 
   <!-- Vista: Nosotros -->
-  <section id="nosotros" class="section">
-    <div class="container">
-      <h2 class="section-title">Sobre Nosotros</h2>
-      <div class="about-card">
-        <h3>Nuestra Filosofía</h3>
-        <p>En PG del Campo creemos en la autenticidad de los productos nicaragüenses. Nos especializamos en:</p>
-        <ul style="padding-left:20px;margin:12px 0;font-size:13px">
-          <li style="margin-bottom:6px">Café de altura tostado artesanalmente</li>
-          <li style="margin-bottom:6px">Pinolillo 100% natural sin conservantes</li>
-          <li style="margin-bottom:6px">Pinol tradicional molido fino</li>
-        </ul>
-        <p>Todos nuestros productos son procesados manteniendo las recetas tradicionales que han pasado de generación en generación.</p>
-      </div>
-      <div class="about-card">
-        <h3>Proceso de Producción</h3>
-        <p>Desde la selección de los mejores granos de café y maíz, hasta el tostado y molido final, cada paso es supervisado para garantizar la máxima calidad. No utilizamos conservantes ni aditivos artificiales.</p>
-        <p>El café puede ser entregado molido o en grano tostado, según la preferencia del cliente.</p>
-      </div>
-    </div>
+  <section id="nosotros" class="section nosotros-view">
+    <!-- Sitio web completo (web-index.html) embebido. Su contenido (empresa,
+         misión, horarios, enlaces, etc.) sigue siendo editable desde el
+         Panel-Admin vía Firebase (nodo config/empresa). -->
+    <iframe id="nosotros-frame" class="nosotros-frame" src="web-index.html" title="Sobre Nosotros — PG del Campo" loading="lazy"></iframe>
   </section>
 
   <!-- Vista: Contacto -->
@@ -750,7 +736,7 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
     <i class="fas fa-clock icono-animado color-horario"></i>
     <div>
       <strong>Horario de Atención:</strong><br>
-      <span id="horario-atencion"><strong style="font-weight:600">Lunes:</strong> 8:30 a.m. – 4:30 p.m.<br><strong style="font-weight:600">Martes:</strong> 8:30 a.m. – 4:30 p.m.<br><strong style="font-weight:600">Miércoles:</strong> 8:30 a.m. – 4:30 p.m.<br><strong style="font-weight:600">Jueves:</strong> 8:30 a.m. – 4:30 p.m.<br><strong style="font-weight:600">Viernes:</strong> 8:30 a.m. – 4:30 p.m.<br><strong style="font-weight:600">Sábado:</strong> 8:30 a.m. – 12:00 m.<br><strong style="font-weight:600">Domingos:</strong> Cerrado</span>
+      <span id="horario-atencion" class="horario-grid"><span class="dia">Lunes</span><span class="hora">8:30 a.m. – 4:30 p.m.</span><span class="dia">Martes</span><span class="hora">8:30 a.m. – 4:30 p.m.</span><span class="dia">Miércoles</span><span class="hora">8:30 a.m. – 4:30 p.m.</span><span class="dia">Jueves</span><span class="hora">8:30 a.m. – 4:30 p.m.</span><span class="dia">Viernes</span><span class="hora">8:30 a.m. – 4:30 p.m.</span><span class="dia">Sábado</span><span class="hora">8:30 a.m. – 12:00 m.</span><span class="dia">Domingos</span><span class="hora cerrado">Cerrado</span></span>
     </div>
   </li>
 
@@ -831,6 +817,28 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
   8%  { transform: rotate(10deg); }
   10% { transform: rotate(-6deg); }
   12% { transform: rotate(6deg); }
+}
+
+/* --- HORARIO ALINEADO (día a la izquierda, hora alineada a la derecha) --- */
+.horario-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin-top: 6px;
+  align-items: baseline;
+}
+.horario-grid .dia  { font-weight: 600; color: #333; }
+.horario-grid .hora { text-align: right; color: #333; white-space: nowrap; }
+.horario-grid .hora.cerrado { color: #c0392b; font-style: italic; }
+
+/* --- Sitio web embebido en la pestaña "Nosotros" --- */
+.nosotros-view { padding: 0 !important; }
+.nosotros-frame {
+  width: 100%;
+  height: calc(100vh - 140px);
+  min-height: 70vh;
+  border: 0;
+  display: block;
 }
 </style>
          
@@ -1309,7 +1317,7 @@ function renderHorario(emp){
   let arr=Array.isArray(hs)?hs:Object.values(hs);
   arr=arr.filter(function(h){return h&&(h.dia||h.horario)});
   if(!arr.length) return;
-  box.innerHTML=arr.map(function(h){return '<strong style="font-weight:600">'+E(h.dia||'')+':</strong> '+E(h.horario||'')}).join('<br>');
+  box.innerHTML=arr.map(function(h){var cls=((h.horario||'')==='Cerrado')?' cerrado':'';return '<span class="dia">'+E(h.dia||'')+'</span><span class="hora'+cls+'">'+E(h.horario||'')+'</span>'}).join('');
 }
 
 /* ── Carrito ── */
