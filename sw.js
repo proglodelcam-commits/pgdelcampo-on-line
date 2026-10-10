@@ -1,4 +1,4 @@
-/* Service worker PG del Campo - version corregida
+/* Service worker PG del Campo - version limpia
    Estrategia:
    - Paginas HTML (navegacion): RED PRIMERO. Si hay internet, siempre trae la
      version fresca (nunca sirve una pagina en blanco cacheada). Si no hay
@@ -8,29 +8,25 @@
    - CACHE_VERSION versionado: al cambiar el numero se borran los caches viejos
      automaticamente en la siguiente carga.
 */
-const CACHE_VERSION = 'pg-campo-v3';
+const CACHE_VERSION = 'pg-campo-v4';
 const STATIC_CACHE  = CACHE_VERSION + '-static';
 const PAGES_CACHE   = CACHE_VERSION + '-pages';
 
-// Recursos que conviene precachear (ajusta si agregas/quitas librerias).
+// Solo recursos que realmente existen y usa index.html en este repo.
 const PRECACHE = [
   './',
   './index.html',
-  './panel.html',
-  './tienda.html',
-  './tarjeta-fidelidad.html',
-  './vendor/tailwind.js',
-  './vendor/chart.umd.min.js',
-  './vendor/qrcode.min.js',
+  './manifest.webmanifest',
   './vendor/fontawesome/css/all.min.css',
-  './vendor/fonts/fonts.css'
+  './vendor/fonts/fonts.css',
+  './public/img/nutricion-infografia.jpg'
 ];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) =>
-      // addAll falla si UN recurso da 404; usamos add individual tolerante
+      // add individual tolerante: si un recurso falta, se ignora
       Promise.all(PRECACHE.map((url) =>
         cache.add(url).catch(() => { /* ignorar recursos faltantes */ })
       ))
@@ -53,8 +49,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
-
   const url = new URL(req.url);
+
   // No interceptar Firebase / dominios externos: dejar pasar a la red.
   if (url.origin !== self.location.origin) return;
 

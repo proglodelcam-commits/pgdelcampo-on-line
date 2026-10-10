@@ -7,8 +7,8 @@
 <meta name="theme-color" content="#2E7D32">
 <meta name="description" content="Productos nicaragüenses de calidad: Café, Pinolillo y Pinol. Directamente del campo a su mesa en Jinotepe, Carazo.">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
 <link rel="icon" type="image/x-icon" href="./favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -684,13 +684,127 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
     </div>
   </section>
 
-  <!-- Vista: Nosotros -->
-  <section id="nosotros" class="section nosotros-view">
-    <!-- Sitio web completo (web-index.html) embebido. Su contenido (empresa,
-         misión, horarios, enlaces, etc.) sigue siendo editable desde el
-         Panel-Admin vía Firebase (nodo config/empresa). -->
-    <iframe id="nosotros-frame" class="nosotros-frame" src="web-index.html" title="Sobre Nosotros — PG del Campo" loading="lazy"></iframe>
+  <!-- Vista: Nosotros (datos de empresa editables desde el Panel-Admin → Firebase config/empresa) -->
+  <section id="nosotros" class="section">
+    <div class="container">
+      <h2 class="section-title">Sobre Nosotros</h2>
+      <div class="about-card">
+        <h3>Nuestra Misión</h3>
+        <p id="empresa-mision">Llevar del campo a su mesa productos nicaragüenses auténticos y de calidad, elaborados con recetas tradicionales y el mayor cuidado en cada paso.</p>
+      </div>
+      <div class="about-card">
+        <h3>Lo que nos hace únicos</h3>
+        <p id="empresa-unico">Procesamos nuestros productos de forma artesanal, sin conservantes ni aditivos artificiales, cuidando cada etapa desde la selección del grano hasta el molido final.</p>
+      </div>
+      <div class="about-card">
+        <h3>Envíos</h3>
+        <p id="empresa-envio">Entregas locales en Jinotepe, Diriamba, Dolores y San Marcos. Envíos nacionales a convenir.</p>
+      </div>
+
+      <style>
+        .nos-sub{font-size:13px;color:var(--text-muted);margin:-4px 0 10px}
+        .nos-row{display:flex;justify-content:space-between;gap:10px;margin:6px 0;flex-wrap:wrap;font-size:13px}
+        .nos-row span:first-child{color:var(--text-muted)}
+        .nos-steps{list-style:none;padding:0;margin:10px 0}
+        .nos-steps li{display:flex;gap:10px;margin-bottom:10px;font-size:13px;align-items:flex-start}
+        .nos-steps .num{flex:0 0 24px;height:24px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+        .nos-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:10px;color:#fff !important;text-decoration:none;font-size:13px;font-weight:600;margin:6px 6px 0 0}
+        .nos-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+        .nos-table th,.nos-table td{border:1px solid var(--border-color);padding:7px 10px;text-align:left}
+        .nos-table th{background:var(--primary-dark);color:#fff;font-weight:600}
+        .nos-img{width:100%;border-radius:12px;margin:10px 0;display:block}
+        .nos-datos{border:1.5px solid var(--primary-color);border-radius:12px;padding:14px;margin-top:12px;font-size:13px}
+        .nos-copy{background:var(--primary-color);color:#fff;border:none;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer}
+        .nos-note{font-size:12px;color:var(--text-muted);font-style:italic;margin-top:8px}
+        .nos-details summary{cursor:pointer;color:var(--primary-color);font-weight:600;font-size:13px}
+      </style>
+
+      <!-- Club de Fidelidad -->
+      <div class="about-card">
+        <h3>Club de Fidelidad</h3>
+        <p class="nos-sub" id="nos-club-eslogan">Tu lealtad nos inspira, la naturaleza nos une</p>
+        <p style="font-size:13px" id="nos-club-desc">Acumula beneficios con cada compra en nuestra tienda en línea.</p>
+        <ol class="nos-steps">
+          <li><span class="num">1</span><span>Crea una cuenta — Regístrate o inicia sesión en nuestra Tienda en Línea (Kyte).</span></li>
+          <li><span class="num">2</span><span>Realiza tus compras — Compra tus productos favoritos y acumula.</span></li>
+          <li><span class="num">3</span><span>Kyte registra tu historial — Todas tus compras quedan registradas automáticamente.</span></li>
+          <li><span class="num">4</span><span>Consulta tu historial — Revisa tus compras en tu cuenta “Pedido” en Kyte.</span></li>
+          <li><span class="num">5</span><span>Obtén tu beneficio — Al completar 5 compras recibes un 2% adicional en tu siguiente compra.</span></li>
+        </ol>
+        <p class="nos-note" id="nos-club-cierre">Disfruta de nuestros productos naturales y acumula beneficios.</p>
+        <div>
+          <a id="nos-link-tarjeta" class="nos-btn" style="background:var(--secondary-color)" href="https://proglodelcam-commits.github.io/tarjeta-fidelidad/" target="_blank" rel="noopener"><i class="fas fa-star"></i> Mi Tarjeta de Fidelidad</a>
+          <a id="nos-link-kyte" class="nos-btn" style="background:#2d5a27" href="https://proglodelcampo.catalog.kyte.site/" target="_blank" rel="noopener"><i class="fas fa-store"></i> Tienda Kyte</a>
+          <a id="nos-link-wa" class="nos-btn" style="background:#25D366" href="https://wa.me/50557973097" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+        </div>
+      </div>
+      <!-- Información Nutricional -->
+      <div class="about-card">
+        <h3>Información Nutricional</h3>
+        <p class="nos-sub" id="nos-nutri-sub">Valores nutricionales del café tostado y molido</p>
+        <p style="font-size:13px">El café tostado y molido es una fuente natural de antioxidantes y cafeína. En promedio, una taza de café negro contiene 2 kcal, 0.3 g de proteínas, 4.7 mg de sodio y 94.8 mg de potasio.</p>
+        <img class="nos-img" id="nos-nutri-img" src="public/img/nutricion-infografia.jpg" alt="Infografía nutricional — Café PG del Campo" loading="lazy">
+        <details class="nos-details">
+          <summary>Ver tabla detallada de nutrientes (por 100 g)</summary>
+          <table class="nos-table">
+            <thead><tr><th>Nutriente</th><th>Valor por 100 g</th></tr></thead>
+            <tbody>
+              <tr><td>Calorías</td><td>201 kcal</td></tr>
+              <tr><td>Proteínas</td><td>12.6 g</td></tr>
+              <tr><td>Grasas totales</td><td>14.2 g</td></tr>
+              <tr><td>Carbohidratos</td><td>28.3 g</td></tr>
+              <tr><td>Fibra</td><td>18.5 g</td></tr>
+              <tr><td>Azúcares</td><td>0 g</td></tr>
+              <tr><td>Sodio</td><td>67 mg</td></tr>
+              <tr><td>Potasio</td><td>4 025 mg</td></tr>
+              <tr><td>Cafeína</td><td>2 650 mg</td></tr>
+            </tbody>
+          </table>
+        </details>
+        <p class="nos-note">Estos valores pueden variar según la variedad del café y el método de preparación. En general, el café es una bebida baja en calorías y rica en antioxidantes.</p>
+      </div>
+      <!-- Paga con QR -->
+      <div class="about-card">
+        <h3>Paga con QR</h3>
+        <p class="nos-sub">Realiza tus pagos cómodo y SEGURO en LaFise Digital</p>
+        <ol class="nos-steps">
+          <li><span class="num">1</span><span>Verifica tu app — Asegúrate de tener instalada y activa tu aplicación de LAFISE en tu celular.</span></li>
+          <li><span class="num">2</span><span>Escanea o haz clic — Abre el escáner de LAFISE y apunta al código, o usa el link de pago.</span></li>
+          <li><span class="num">3</span><span>Confirma — Revisa los datos de PG del Campo, ingresa tu código de seguridad (o huella) ¡y listo!</span></li>
+        </ol>
+        <a id="nos-link-qr" class="nos-btn" style="background:var(--primary-color)" href="https://digital.lafise.com/?BANK=BLNI&ACCOUNT_NUMBER=140051265&CONCEPT=Compra%20Productos%20PG%20del%20Campo" target="_blank" rel="noopener"><i class="fas fa-qrcode"></i> Pagar en LAFISE Digital</a>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:10px"><strong>Seguridad:</strong> Los pagos a través de LAFISE utilizan protocolos de seguridad bancaria como el código OTP y estándares IBAN para transferencias.</p>
+        <div class="nos-datos">
+          <p style="color:var(--primary-color);font-weight:700;margin-bottom:8px"><i class="fas fa-university" style="margin-right:6px"></i>Transferencia Directa / ACH — <span id="nos-pago-banco">Bancentro LAFISE</span></p>
+          <div class="nos-row"><span>Titular:</span><strong id="nos-pago-titular">Fernando F. Martínez Flores</strong></div>
+          <div class="nos-row"><span>Alias ACH / Móvil:</span><span style="display:inline-flex;align-items:center;gap:8px"><strong id="nos-pago-ach">5797 3097</strong><button type="button" class="nos-copy" id="nos-copy-ach" data-copy="nos-pago-ach">Copiar</button></span></div>
+          <div class="nos-row"><span>Número de Cuenta:</span><strong id="nos-pago-cuenta">140051265</strong></div>
+        </div>
+        <div class="nos-datos">
+          <p style="font-weight:700;margin-bottom:4px">Pago Contra Entrega</p>
+          <p id="nos-pago-entrega" style="margin-bottom:10px">Cancela tu pedido al momento de recibirlo. Pago directo al Agente designado.</p>
+          <p style="font-weight:700;margin-bottom:4px">Cheque</p>
+          <p id="nos-pago-cheque">Girado a nombre de Fernando F. Martínez Flores (Representante Legal).</p>
+        </div>
+      </div>
+    </div>
   </section>
+
+  <script>
+  /* Nosotros: botón copiar ACH y respaldo de imagen nutricional */
+  (function(){
+    var cp=document.getElementById('nos-copy-ach');
+    if(cp){cp.addEventListener('click',function(){
+      var el=document.getElementById(cp.getAttribute('data-copy'));
+      var val=(el?el.textContent:'').replace(/\s+/g,'');
+      var done=function(){var o=cp.textContent;cp.textContent='¡Copiado!';setTimeout(function(){cp.textContent=o},1600)};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(val).then(done,done)}
+      else{try{var t=document.createElement('textarea');t.value=val;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t)}catch(e){}done()}
+    })}
+    var ni=document.getElementById('nos-nutri-img');
+    if(ni){ni.addEventListener('error',function(){ni.style.display='none'})}
+  })();
+  </script>
 
   <!-- Vista: Contacto -->
   <section id="contacto" class="section">
@@ -831,15 +945,6 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
 .horario-grid .hora { text-align: right; color: #333; white-space: nowrap; }
 .horario-grid .hora.cerrado { color: #c0392b; font-style: italic; }
 
-/* --- Sitio web embebido en la pestaña "Nosotros" --- */
-.nosotros-view { padding: 0 !important; }
-.nosotros-frame {
-  width: 100%;
-  height: calc(100vh - 140px);
-  min-height: 70vh;
-  border: 0;
-  display: block;
-}
 </style>
          
         </ul>
@@ -942,36 +1047,11 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
 <!-- Footer -->
 <footer>
   <div class="container">
-    <div class="footer-logo">
-      <i class="fas fa-leaf"></i>
-      <h3>PG del Campo</h3>
-    </div>
-    <div class="footer-links">
-      <div class="footer-column">
-        <h3>Productos</h3>
-        <ul>
-          <li><a href="#productos" class="nav-link" data-target="productos">Café Molido</a></li>
-          <li><a href="#productos" class="nav-link" data-target="productos">Café en Grano</a></li>
-          <li><a href="#productos" class="nav-link" data-target="productos">Pinolillo</a></li>
-          <li><a href="#productos" class="nav-link" data-target="productos">Pinol</a></li>
-        </ul>
-      </div>
-      <div class="footer-column">
-        <h3>Navegación</h3>
-        <ul>
-          <li><a href="#inicio" class="nav-link" data-target="inicio">Inicio</a></li>
-          <li><a href="#nosotros" class="nav-link" data-target="nosotros">Nosotros</a></li>
-          <li><a href="#contacto" class="nav-link" data-target="contacto">Contacto</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="social-icons">
-      <a href="https://wa.me/50557973097" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-      <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-      <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-    </div>
-    <div class="copyright">
-      <p>&copy; 2026 PG del Campo - Jinotepe, Carazo, Nicaragua</p>
+    <div class="copyright" style="border-top:none;margin-top:0;padding-top:0">
+      <p id="nos-footer-copy">© 2026 PG del Campo. Todos los derechos reservados.</p>
+      <p id="nos-footer-loc" style="margin-top:4px">Jinotepe, Carazo — Nicaragua</p>
+      <p style="margin-top:4px">Tel: <span id="nos-footer-tel">+505 5797 3097</span></p>
+      <p id="nos-footer-ruc" style="margin-top:4px">RUC: 0452907730000U</p>
     </div>
   </div>
 </footer>
@@ -1217,7 +1297,7 @@ function startSync(){
   onValue(ref(db,'productos'),s=>{productos=s.val()||{};render()});
   onValue(ref(db,'clientes'),s=>{clientes=s.val()||{};cliente()});
   onValue(ref(db,'anuncios'),s=>{renderCarrusel(s.val()||{})});
-  onValue(ref(db,'config/empresa'),s=>{renderHorario(s.val()||{})});
+  onValue(ref(db,'config/empresa'),s=>{var e=s.val()||{};renderHorario(e);renderEmpresa(e)});
   /* Siembra automática del catálogo si la nube está vacía */
   get(ref(db,'productos')).then(s=>{ if(!s.exists()||!Object.keys(s.val()||{}).length){ set(ref(db,'productos'),SEED_PRODUCTOS); } }).catch(()=>{});
 }
@@ -1318,6 +1398,34 @@ function renderHorario(emp){
   arr=arr.filter(function(h){return h&&(h.dia||h.horario)});
   if(!arr.length) return;
   box.innerHTML=arr.map(function(h){var cls=((h.horario||'')==='Cerrado')?' cerrado':'';return '<span class="dia">'+E(h.dia||'')+'</span><span class="hora'+cls+'">'+E(h.horario||'')+'</span>'}).join('');
+}
+
+/* ── Datos de empresa en "Nosotros" (editables desde el Panel-Admin, nodo config/empresa) ── */
+function renderEmpresa(emp){
+  if(!emp) return;
+  var set=function(id,v){var el=$(id); if(el&&v!=null&&String(v).trim()!=='') el.textContent=v;};
+  var href=function(id,v){var el=$(id); if(el&&v) el.setAttribute('href',v);};
+  set('empresa-mision',emp.mision); set('empresa-unico',emp.unico); set('empresa-envio',emp.envio);
+  set('nos-direccion',emp.direccion); set('nos-tel',emp.tel); set('nos-email',emp.email);
+  set('nos-club-eslogan',emp.clubEslogan); set('nos-club-desc',emp.clubDescripcion); set('nos-club-cierre',emp.clubCierre);
+  set('nos-pago-banco',emp.banco); set('nos-pago-titular',emp.titular); set('nos-pago-ach',emp.whatsapp||emp.ach);
+  set('nos-pago-cuenta',emp.cuenta); set('nos-pago-entrega',emp.pagoEntrega); set('nos-pago-cheque',emp.pagoCheque);
+  set('nos-nutri-sub',emp.nutriSubtitulo);
+  set('nos-footer-copy',emp.footerCopy); set('nos-footer-loc',emp.lugar); set('nos-footer-tel',emp.tel);
+  if(emp.footerRuc) set('nos-footer-ruc',emp.footerRuc); else if(emp.ruc) set('nos-footer-ruc','RUC: '+emp.ruc);
+  if(emp.email){ href('nos-email-link','mailto:'+emp.email); }
+  if(emp.tel){ var wt=String(emp.tel).replace(/\D/g,'').replace(/^505/,''); if(wt){ href('nos-tel-link','https://wa.me/505'+wt); } }
+  if(emp.whatsapp){ var ww=String(emp.whatsapp).replace(/\D/g,'').replace(/^505/,''); if(ww){ href('nos-link-wa','https://wa.me/505'+ww); } }
+  if(emp.enlaceKyte){ href('nos-link-kyte',emp.enlaceKyte); }
+  if(emp.enlaceTarjetaFidelidad){ href('nos-link-tarjeta',emp.enlaceTarjetaFidelidad); }
+  if(emp.enlacePagoQR){ href('nos-link-qr',emp.enlacePagoQR); }
+  var hs=emp.horarios;
+  if(hs){
+    var arr=Array.isArray(hs)?hs:Object.values(hs);
+    arr=arr.filter(function(h){return h&&(h.dia||h.horario)});
+    var box=$('horario-nosotros');
+    if(box&&arr.length){ box.innerHTML=arr.map(function(h){var cls=((h.horario||'')==='Cerrado')?' cerrado':'';return '<span class="dia">'+E(h.dia||'')+'</span><span class="hora'+cls+'">'+E(h.horario||'')+'</span>'}).join(''); }
+  }
 }
 
 /* ── Carrito ── */
