@@ -1295,7 +1295,7 @@ const $=id=>document.getElementById(id),
 /* ── Listeners de Firebase (tiempo real) ── */
 function startSync(){
   onValue(ref(db,'productos'),s=>{productos=s.val()||{};render()});
-  onValue(ref(db,'clientes'),s=>{clientes=s.val()||{};cliente()});
+  /* Por seguridad NO se suscribe a todo el nodo 'clientes' (datos privados de todos). Se consulta por telefono bajo demanda en cliente() y saveTransaction(). */
   onValue(ref(db,'anuncios'),s=>{renderCarrusel(s.val()||{})});
   onValue(ref(db,'config/empresa'),s=>{var e=s.val()||{};renderHorario(e);renderEmpresa(e)});
   /* Siembra automática del catálogo si la nube está vacía */
@@ -1447,9 +1447,9 @@ window.add=function(id){
 window.removeItem=function(id){carrito=carrito.filter(function(x){return x.id!==id});calc()};
 
 /* ── Cliente ── */
-window.cliente=function(){
+window.cliente=async function(){
   let t=$('cliente-tel').value.trim();
-  cActual=clientes[t]||null;
+  cActual = t ? ((await get(ref(db,'clientes/'+t))).val()||null) : null;
   if(cActual&&!$('cliente-nombre').value)$('cliente-nombre').value=cActual.nombre||'';
   let n=+(cActual&&cActual.total_compras||0),s=n%10;
   $('clientInfo').innerHTML=cActual
@@ -1528,7 +1528,7 @@ async function saveTransaction(num){
   if(!tel)throw Error('Falta el c\u00f3digo de cliente (WhatsApp).');
   let id=(t.modo==='credito'?'credito_':'contado_')+Date.now(),
       now=new Date().toISOString(),
-      old=clientes[tel]||{},
+      old=(await get(ref(db,'clientes/'+tel))).val()||{},
       items={};
   carrito.forEach(function(i){items[i.id]={cantidad:i.q,nombre:i.n,precio:i.price}});
   let paid=t.modo==='contado'?t.total:0,
@@ -1575,7 +1575,7 @@ async function saveTransaction(num){
   }
   for(let i of carrito){
     let pdt=productos[i.id];
-    if(pdt)u['productos/'+i.id]={...pdt,stock:Math.max(0,+pdt.stock-i.q)};
+    if(pdt)u['productos/'+i.id+'/stock']=Math.max(0,+pdt.stock-i.q);
   }
   await update(ref(db),u);
   return{id,num,t};
