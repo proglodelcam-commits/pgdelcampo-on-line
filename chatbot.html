@@ -1,99 +1,98 @@
-const API_KEY = "AIzaSyA1UaWoBqX3WaL0IwZZ9enOm8F9OzkrNeo";   
- 
-function doPost(e) {
-  try {
-    if (!e?.postData?.contents) {
-      return ContentService.createTextOutput(JSON.stringify({ respuesta: "Error: No se recibieron datos." }));
-    }
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; background-color: #f4f6f4; }
+    #chat-container { max-width: 100%; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 15px; border: 1px solid #e1e8e1; }
+    #header-bot { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 2px solid #2d5a27; padding-bottom: 8px; }
+    #header-bot h3 { margin: 0; color: #2d5a27; font-size: 16px; }
+    #header-bot span { font-size: 11px; color: #777; background: #e2f0d9; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+    #historial { height: 300px; overflow-y: auto; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
+    .mensaje { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: pre-line; }
+    .usuario { background-color: #2d5a27; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .ia { background-color: #eaefe9; color: #233e20; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #d3ded2; }
+    #input-area { display: flex; gap: 8px; }
+    #texto { flex-grow: 1; padding: 10px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; outline: none; }
+    #texto:focus { border-color: #2d5a27; }
+    #btn-enviar { background-color: #2d5a27; color: white; border: none; padding: 0 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    #btn-enviar:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+  </style>
+</head>
+<body>
 
-    const mensajeUsuario = JSON.parse(e.postData.contents).mensaje;
-    
-    // URL estándar v1 para Gemini 2.5 Flash
-    const url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
-    
-    // Inyectamos las reglas del negocio con REGLA DE FORMATO DE ENLACES y SEGUIMIENTO DE PEDIDOS
-    const instruccionesContexto = 
-      "INSTRUCCIÓN DEL SISTEMA: A partir de ahora actuarás estrictamente bajo estas reglas: " +
-      "Eres BotsPG, el Asistente Virtual de 'Productos Globales del Campo' (PG del Campo). " +
-      "Tu misión es ayudar a los clientes con información de nuestras web: https://proglodelcam-commits.github.io/pgdelcampo-on-line/ y consultar en la web temas relacionado a nustros productos y servicios . " +
-      "REGLA OBLIGATORIA DE FORMATO PARA ENLACES Y URLS: NUNCA repitas ni dupliques las direcciones web en el texto (evita escribir 'https://... [https://...]'). Usa formato de hipervínculo limpio o escribe únicamente la URL una sola vez. " +
-      "NOTA FISCAL DE LA EMPRESA: Somos Régimen Fiscal de CUOTA FIJA. " +
-      "LISTA DE PRECIOS Y PRODUCTOS ACTUALIZADOS (Usa estos datos siempre como base real): " +
-      "- Café Clásico del Campo (400gr): C$ 220.00 " +
-      "- Café Clásico del Campo (200gr): C$ 125.00 " +
-      "- Café del Campo (400gr): C$ 173.00 " +
-      "- Café del Campo (200gr): C$ 92.00 " +
-      "- Pinolillo del Campo (400gr): C$ 47.00 " +
-      "- Pinolillo del Campo (200gr): C$ 25.00 " +
-      "- Pinol: Indicar al cliente que debe consultar la disponibilidad actual en el catálogo. " +
-      "- Abono Orgánico (Humus de Lombriz): Indicar al cliente que se debe consultar el precio según la cantidad requerida. " +
-      "SECCIONES CLAVE DE NUESTRA WEB: 1. NUESTROS PRODUCTOS: Café de altura (Jinotega/Matagalpa) molido o en grano, Pinolillo, Pinol y Abono Orgánico. " +
-      "2. NUESTRA EMPRESA: Productores comprometidos con la calidad natural desde Jinotepe, Carazo. " +
-      "3. TABLA NUTRICIONAL: Productos naturales, sin preservantes artificiales, artesanales y 100% saludables. " +
-      "4. PAGA CON QR: Aceptamos pagos rápidos y seguros con códigos QR (LAFISE Bancentro y otros). " +
-      "5. CONTACTA CON UN AGENTE: Invita al cliente a usar el botón de WhatsApp o sección de contacto para atención humana. " +
-      "6. ORIGEN Y PROCESAMIENTO: Explica siempre que la materia prima (granos de café) proviene de las mejores zonas cafeteras de Jinotega y Matagalpa, y que el proceso de tostado, molienda y empaquetado se realiza en Jinotepe, Carazo. " +
-      "7. PEDIDOS Y CATÁLOGO: Invita siempre a los usuarios a realizar sus pedidos a través del catálogo oficial en Kyte (https://proglodelcampo.catalog.kyte.site) para garantizar la disponibilidad de inventario y procesar su compra de forma rápida. " +
-      "8. USA ESTA WEB (https://proglodelcam-commits.github.io/pgdelcampo-on-line/): Invita al cliente a usar la sección de catálogo directo en esta Web https://proglodelcam-commits.github.io/pgdelcampo-on-line/. " +
-      "TIENDA EN LÍNEA Y PRECIOS: Siempre invita a revisar nuestro Catálogo Kyte: https://proglodelcampo.catalog.kyte.site para confirmar existencias en vivo o si desean agregar productos al carrito, o realizar sus compras directa en la sección de catálogo en el sitio Web https://proglodelcam-commits.github.io/pgdelcampo-on-line/" +
-      "POLÍTICA DE ENVIOS: Entrega a Domicilio en Carazo (Jinotepe, Dolores, Diriamba y San Marcos). Fuera de aquí, envío a convenir. " +
-      "Costos: Envío GRATIS en compras mayores a C$ 1,000.00 o si son Comercios/Distribuidores. Envío estándar de C$ 20.00 si la compra es menor o igual a C$ 1,000.00. " +
-      "REGLAS DE DESCUENTO Y CLUB DE CLIENTES FRECUENTES 100% DIGITAL: " +
-      "1. Promociones por volumen: Si la compra supera C$ 600.00 aplica 1% de descuento. Si supera C$ 1,200.00 aplica 2%. Si supera C$ 1,800.00 aplica 3% al subtotal. " +
-      "2. Premio a la Fidelidad (10ma Compra): ¡La 10ma compra obtiene un 2% ADICIONAL de descuento! Los beneficios se acumulan así: " +
-      "   - Compra mayor a C$ 600.00: 1% volumen + 2% fidelidad = 3% total. " +
-      "   - Compra mayor a C$ 1,200.00: 2% volumen + 2% fidelidad = 4% total. " +
-      "   - Compra mayor a C$ 1,800.00: 3% volumen + 2% fidelidad = 5% total. " +
-      "   IMPORTANTE: El descuento por Fidelidad NO APLICA a Comercios ni Distribuidores, es exclusivo para personas independientes y compras a domicilio. " +
-      "3. Cómo unirse, ingresar y dar seguimiento: Entrar a nuestra sección VIP en https://proglodelcam-commits.github.io/tarjeta-fidelidad/ (no duplicar esta dirección), buscar el PASO 1 y acceder a nuestra Tienda en Línea KYTE para crear la cuenta en segundos. Al realizar sus compras con su usuario registrado, el cliente podrá ir a la sección de 'Pedidos' en KYTE para llevar el seguimiento y estado de sus compras. Allí podrá ver la cantidad de pedidos realizados para verificar cuándo cumple sus 10 compras y acceder a su promoción por fidelidad. " +
-      "4. Cómo reclamar el descuento: Al realizar la 10ma compra o superar los montos de promoción, usar el botón del PASO 2 en la web para avisar por WhatsApp y aplicar el descuento antes de pagar. " +
-      "METODOS DE PAGO: Si preguntan '¿Puedo pagar al recibir?' responde: '¡Claro que sí! En PG del Campo aceptamos pago contra entrega para tu comodidad, además Link de pago, transferencias y QR a nuestra cuenta del Banco LaFise Bancentro'. También aceptamos cheques coordinados a nombre de Fernando F Martínez Flores. " +
-      "INSTRUCCIÓN DE FORMATO PARA PRESUPUESTOS: Si piden presupuesto calcula basándote en la lista de precios anterior y responde ESTRICTAMENTE con este esquema: " +
-      "1. Cantidad y Producto (con precio unitario), 2. Subtotal, 3. Descuento aplicado (si aplica), 4. Costo de Envío, 5. TOTAL FINAL en Córdobas (NIO), 6. Despedida invitando a confirmar por WhatsApp (Tel: (505) 5797-3097) o Catálogo Kyte. " +
-      "DATOS DE CONTACTO: Fernando Martínez F. (Rep. Legal), Martha R Vega (Gerente de Operaciones). Teléfono: (505) 5797-3097. Email: proglodelcam@gmail.com. Cuidamos el medio ambiente con recibos digitales. Sé amable, sencillo pero profesional.";
+<div id="chat-container">
+  <div id="header-bot">
+    <h3><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 2V4M12 20V22M4 12H2M22 12H20" stroke="#0080FF" stroke-width="2" stroke-linecap="round"/>
+  <rect x="5" y="6" width="14" height="12" rx="3" fill="#1E293B" stroke="#0080FF" stroke-width="2"/>
+  <circle cx="9" cy="11" r="1.5" fill="#00E5FF"/>
+  <circle cx="15" cy="11" r="1.5" fill="#00E5FF"/>
+  <path d="M9 15H15" stroke="#00E5FF" stroke-width="1.5" stroke-linecap="round"/>
+</svg> BotsPG</h3>
+    <span>Asistente Virtual</span>
+  </div>
+  <div id="historial">
+    <div class="mensaje ia">¡Hola! Soy <b>BotsPG</b>, asistente de Productos Globales del Campo. ¿En qué te puedo asesorar hoy? Ofrecemos café de altura, pinolillo, abono orgánico y envíos en la zona de Carazo.</div>
+  </div>
+  <div id="input-area">
+    <input type="text" id="texto" placeholder="Pregúntame por precios, productos o presupuestos..." onkeypress="evaluarTecla(event)">
+    <button id="btn-enviar" onclick="enviarMensaje()">Enviar</button>
+  </div>
+</div>
 
-    const payload = {
-      contents: [
-        { 
-          role: "user", 
-          parts: [{ text: instruccionesContexto }] 
-        },
-        { 
-          role: "model", 
-          parts: [{ text: "Entendido perfectamente. Asumo el rol de BotsPG, mantengo todas las reglas comerciales, explicaré la función de seguimiento de Pedidos en KYTE para la 10ª compra y presentaré enlaces limpios sin duplicar direcciones web." }] 
-        },
-        { 
-          role: "user", 
-          parts: [{ text: mensajeUsuario }] 
-        }
-      ],
-      generationConfig: { 
-        temperature: 0.4 
+<script>
+  // ⚠️ REEMPLAZA ESTA URL CON LA QUE DA GOOGLE APPS SCRIPT AL IMPLEMENTAR (Termina en /exec)
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzm-VrcGn22nThJQgab0xL_RLgwld_jcxvOXotDmMl8jQnWVjI8HmO7Du-QlV_iIQGM/exec";
+
+  async function enviarMensaje() {
+    const input = document.getElementById("texto");
+    const historial = document.getElementById("historial");
+    const btn = document.getElementById("btn-enviar");
+    const mensaje = input.value.trim();
+    
+    if (!mensaje) return;
+
+    // Mensaje de Usuario
+    historial.innerHTML += `<div class="mensaje usuario">${mensaje}</div>`;
+    input.value = "";
+    historial.scrollTop = historial.scrollHeight;
+
+    // Bloquear app mientras procesa
+    btn.disabled = true;
+    const msgCarga = document.createElement("div");
+    msgCarga.className = "mensaje ia";
+    msgCarga.innerHTML = "<i>Analizando solicitud central...</i>";
+    historial.appendChild(msgCarga);
+    historial.scrollTop = historial.scrollHeight;
+
+    try {
+      // Petición avanzada para evitar bloqueos proxy en Google Sites
+      const response = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" }, // Evita pre-flight OPTIONS CORS
+        body: JSON.stringify({ mensaje: mensaje })
+      });
+
+      const datos = await response.json();
+      
+      if (datos && datos.respuesta) {
+        msgCarga.innerHTML = datos.respuesta;
+      } else {
+        msgCarga.innerHTML = "Disculpa, tuvimos un inconveniente al procesar la respuesta. Por favor, intenta de nuevo.";
       }
-    };
- 
-    const respuesta = UrlFetchApp.fetch(url, {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
- 
-    const resJson = JSON.parse(respuesta.getContentText());
- 
-    if (respuesta.getResponseCode() === 200 && resJson.candidates && resJson.candidates[0]?.content?.parts?.[0]?.text) {
-      const textoIA = resJson.candidates[0].content.parts[0].text;
-      return ContentService.createTextOutput(JSON.stringify({ respuesta: textoIA }));
-    } else {
-      return ContentService.createTextOutput(JSON.stringify({ 
-        respuesta: "Error en la respuesta de Gemini: " + (resJson.error?.message || respuesta.getContentText()) 
-      }));
+    } catch (error) {
+      msgCarga.innerHTML = "<b>Aviso de conexión:</b> No se logró enlazar con el puente de Jinotepe. Por favor verifica la publicación.";
     }
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ respuesta: "Error en el puente de Jinotepe: " + err.toString() }));
+
+    btn.disabled = false;
+    historial.scrollTop = historial.scrollHeight;
   }
-}
- 
-function doGet() {
-  return ContentService.createTextOutput("Sistema PG del Campo 2.5 Activo");
-}
+
+  function evaluarTecla(e) {
+    if (e.key === 'Enter') enviarMensaje();
+  }
+</script>
+
+</body>
+</html>
