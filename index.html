@@ -1234,7 +1234,7 @@ footer{background-color:var(--primary-dark);color:var(--white);padding:24px 0 40
     <button class="btn-close-bot" onclick="toggleChatBot()"><i class="fas fa-times"></i></button>
   </div>
   <div id="historial">
-    <div class="mensaje ia">¡Hola! Soy <b>BotsPG</b>, asistente de Productos Globales del Campo. ¿En qué te puedo asesorar hoy? Ofrecemos café de altura, pinolillo, abono orgánico y envíos en la zona de Carazo.</div>
+    <div class="mensaje ia">¡Hola! Soy <b>BotsPG</b>, asistente de Productos Globales del Campo. ¿En qué te puedo asesorar hoy? Ofrecemos café de altura, pinolillo, abono orgánico y envíos en la zona de Carazo.<br><br>🌐 Visita nuestra tienda en línea: <a href="https://proglodelcampo.catalog.kyte.site" target="_blank" rel="noopener noreferrer">proglodelcampo.catalog.kyte.site</a></div>
   </div>
   <div id="input-area">
     <input type="text" id="texto" placeholder="Pregúntame por precios, productos..." onkeypress="evaluarTecla(event)">
@@ -1407,7 +1407,7 @@ if(installBtn){
 
 <!-- Script: ChatBot BotsPG -->
 <script>
-var WEB_APP_URL="https://script.google.com/macros/s/AKfycbwoyfQoI6a92QGt5BXlERybT7ujEa9kzolKbcSdIIvGehlbVWtK0ftq240xEzsuqEbs/exec";
+window.WEB_APP_URL=window.WEB_APP_URL||"https://script.google.com/macros/s/AKfycbzNOlNPvW6g1NYqi9Ra0iErNJU5ijt5HvJTy88tZhyrmaFeuD-9tS274y17yp8SiH1c/exec";
 function toggleChatBot(){
   var win=document.getElementById('chatbot-window');
   win.style.display=(win.style.display==='flex')?'none':'flex';
@@ -1430,10 +1430,11 @@ async function enviarMensaje(){
   historial.appendChild(msgCarga);
   historial.scrollTop=historial.scrollHeight;
   try{
-    var response=await fetch(WEB_APP_URL,{
+    var contexto=(typeof window.pgContextoTienda==="function")?window.pgContextoTienda():"";
+    var response=await fetch(window.WEB_APP_URL,{
       method:"POST",
       headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify({mensaje:mensaje})
+      body:JSON.stringify({mensaje:mensaje,contexto:contexto})
     });
     var datos=await response.json();
     if(datos&&datos.respuesta){
@@ -1496,12 +1497,41 @@ const $=id=>document.getElementById(id),
       M=n=>'C$ '+Number(n||0).toLocaleString('es-NI',{minimumFractionDigits:2,maximumFractionDigits:2}),
       E=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]));
 
+/* ── Base de conocimiento viva para BotsPG: catálogo + datos de empresa desde Firebase ── */
+window.pgContextoTienda=function(){
+  try{
+    var out=[];
+    var e=window.__pgEmpresa||{};
+    out.push('NEGOCIO: '+(e.nombre||'Productos Globales del Campo (PG del Campo)'));
+    if(e.lugar) out.push('Ubicacion: '+e.lugar);
+    if(e.tel) out.push('Telefono: '+e.tel);
+    if(e.whatsapp) out.push('WhatsApp: +505 '+e.whatsapp);
+    if(Array.isArray(e.horarios)&&e.horarios.length){ out.push('Horarios: '+e.horarios.map(function(h){return h.dia+' '+h.horario;}).join('; ')); }
+    if(e.envio) out.push('Envios: '+String(e.envio).replace(/\s+/g,' ').trim());
+    if(e.pagoEntrega) out.push('Pago contra entrega: '+String(e.pagoEntrega).replace(/\s+/g,' ').trim());
+    if(e.banco) out.push('Pago por transferencia: '+e.banco+(e.cuenta?(' Cta '+e.cuenta):'')+(e.ach?(' ACH '+e.ach):''));
+    if(e.mision) out.push('Mision: '+String(e.mision).replace(/\s+/g,' ').trim());
+    out.push('Tienda en linea oficial: https://proglodelcampo.catalog.kyte.site');
+    if(e.enlaceKyte) out.push('Catalogo Kyte: '+e.enlaceKyte);
+    var P=window.__pgProductos||{};
+    var items=Object.keys(P).map(function(k){return P[k];}).filter(function(p){return p&&p.visible!==false;});
+    if(items.length){
+      out.push('CATALOGO ('+items.length+' productos):');
+      items.forEach(function(p){
+        var disp=(p.controla_stock===false)?'disponible':((Number(p.stock||0)>0)?'disponible':'agotado');
+        out.push('- '+(p.nombre||'Producto')+': '+M(p.precio)+(p.categoria?(' | '+p.categoria):'')+' | '+disp+(p.puntos?(' | '+p.puntos+' pts fidelidad'):''));
+      });
+    }
+    return out.join('\n');
+  }catch(err){ return ''; }
+};
+
 /* ── Listeners de Firebase (tiempo real) ── */
 function startSync(){
-  onValue(ref(db,'productos'),s=>{productos=s.val()||{};render()});
+  onValue(ref(db,'productos'),s=>{productos=s.val()||{};window.__pgProductos=productos;render()});
   /* Por seguridad NO se suscribe a todo el nodo 'clientes' (datos privados de todos). Se consulta por telefono bajo demanda en cliente() y saveTransaction(). */
   onValue(ref(db,'anuncios'),s=>{renderCarrusel(s.val()||{})});
-  onValue(ref(db,'config/empresa'),s=>{var e=s.val()||{};renderHorario(e);renderEmpresa(e)});
+  onValue(ref(db,'config/empresa'),s=>{var e=s.val()||{};window.__pgEmpresa=e;if(e.chatbotUrl&&/^https?:\/\//i.test(e.chatbotUrl))window.WEB_APP_URL=e.chatbotUrl;renderHorario(e);renderEmpresa(e)});
   /* Siembra automática del catálogo si la nube está vacía */
   get(ref(db,'productos')).then(s=>{ if(!s.exists()||!Object.keys(s.val()||{}).length){ set(ref(db,'productos'),SEED_PRODUCTOS); } }).catch(()=>{});
 }
