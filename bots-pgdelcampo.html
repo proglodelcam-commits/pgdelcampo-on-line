@@ -42,8 +42,9 @@
 </div>
 
 <script>
-  // ⚠️ REEMPLAZA ESTA URL CON LA QUE DA GOOGLE APPS SCRIPT AL IMPLEMENTAR (Termina en /exec)
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNOlNPvW6g1NYqi9Ra0iErNJU5ijt5HvJTy88tZhyrmaFeuD-9tS274y17yp8SiH1c/exec";
+  // La direccion del Apps Script se lee desde Firebase (config/empresa.chatbotUrl),
+  // asi solo se cambia en UN lugar (Panel-Admin). Este valor es solo de respaldo.
+  window.WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNOlNPvW6g1NYqi9Ra0iErNJU5ijt5HvJTy88tZhyrmaFeuD-9tS274y17yp8SiH1c/exec";
 
   async function enviarMensaje() {
     const input = document.getElementById("texto");
@@ -67,11 +68,12 @@
     historial.scrollTop = historial.scrollHeight;
 
     try {
+      const contexto = (typeof window.pgContextoTienda === 'function') ? window.pgContextoTienda() : '';
       // Petición avanzada para evitar bloqueos proxy en Google Sites
       const response = await fetch(WEB_APP_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain" }, // Evita pre-flight OPTIONS CORS
-        body: JSON.stringify({ mensaje: mensaje })
+        body: JSON.stringify({ mensaje: mensaje, contexto: contexto })
       });
 
       const datos = await response.json();
@@ -92,6 +94,52 @@
   function evaluarTecla(e) {
     if (e.key === 'Enter') enviarMensaje();
   }
+</script>
+<!-- Fuente unica de la direccion del ChatBot: Firebase (config/empresa.chatbotUrl) -->
+<script type="module">
+  import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import{getDatabase,ref,onValue}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+  import{getAuth,signInAnonymously,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  const cfg={apiKey:'AIzaSyBfPmfE6axd_W0Z80b0L-Jbjy6q7l9_NTk',authDomain:'productos-globales-campo.firebaseapp.com',databaseURL:'https://productos-globales-campo-default-rtdb.firebaseio.com',projectId:'productos-globales-campo'};
+  try{
+    const app=initializeApp(cfg);
+    const db=getDatabase(app);
+    const auth=getAuth(app);
+    const M=n=>'C$ '+Number(n||0).toLocaleString('es-NI',{minimumFractionDigits:2,maximumFractionDigits:2});
+    /* Base de conocimiento viva para el bot: catalogo + datos de empresa desde Firebase */
+    window.pgContextoTienda=function(){
+      try{
+        var out=[];
+        var e=window.__pgEmpresa||{};
+        out.push('NEGOCIO: '+(e.nombre||'Productos Globales del Campo (PG del Campo)'));
+        if(e.lugar) out.push('Ubicacion: '+e.lugar);
+        if(e.tel) out.push('Telefono: '+e.tel);
+        if(e.whatsapp) out.push('WhatsApp: +505 '+e.whatsapp);
+        if(Array.isArray(e.horarios)&&e.horarios.length){ out.push('Horarios: '+e.horarios.map(function(h){return h.dia+' '+h.horario;}).join('; ')); }
+        if(e.envio) out.push('Envios: '+String(e.envio).replace(/\s+/g,' ').trim());
+        if(e.pagoEntrega) out.push('Pago contra entrega: '+String(e.pagoEntrega).replace(/\s+/g,' ').trim());
+        if(e.banco) out.push('Pago por transferencia: '+e.banco+(e.cuenta?(' Cta '+e.cuenta):'')+(e.ach?(' ACH '+e.ach):''));
+        if(e.mision) out.push('Mision: '+String(e.mision).replace(/\s+/g,' ').trim());
+        if(e.enlaceKyte) out.push('Tienda en linea: '+e.enlaceKyte);
+        var P=window.__pgProductos||{};
+        var items=Object.keys(P).map(function(k){return P[k];}).filter(function(p){return p&&p.visible!==false;});
+        if(items.length){
+          out.push('CATALOGO ('+items.length+' productos):');
+          items.forEach(function(p){
+            var disp=(p.controla_stock===false)?'disponible':((Number(p.stock||0)>0)?'disponible':'agotado');
+            out.push('- '+(p.nombre||'Producto')+': '+M(p.precio)+(p.categoria?(' | '+p.categoria):'')+' | '+disp+(p.puntos?(' | '+p.puntos+' pts fidelidad'):''));
+          });
+        }
+        return out.join('\n');
+      }catch(err){ return ''; }
+    };
+    function leer(){
+      onValue(ref(db,'config/empresa'),s=>{ const e=s.val()||{}; window.__pgEmpresa=e; if(e.chatbotUrl&&/^https?:\/\//i.test(e.chatbotUrl)) window.WEB_APP_URL=e.chatbotUrl; });
+      onValue(ref(db,'productos'),s=>{ window.__pgProductos=s.val()||{}; });
+    }
+    onAuthStateChanged(auth,u=>{ if(u) leer(); });
+    signInAnonymously(auth).catch(()=>{ leer(); });
+  }catch(e){ /* si Firebase esta bloqueado, se usa la direccion de respaldo */ }
 </script>
 
 </body>
