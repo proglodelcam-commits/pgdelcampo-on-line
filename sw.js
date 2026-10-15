@@ -11,7 +11,7 @@
 
 /* 👇 IMPORTANTE: sube este número (v1 -> v2 -> v3...) cada vez que
    publiques cambios en la tienda. Es lo único que debes tocar. */
-const CACHE_VERSION = 'pg-tienda-v2';
+const CACHE_VERSION = 'pg-tienda-v1';
 
 /* Archivos base para que la app abra incluso sin conexión. */
 const PRECACHE_URLS = [
