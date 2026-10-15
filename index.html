@@ -1379,8 +1379,29 @@ var deferredPrompt;
 var installBanner=document.getElementById('installBanner');
 var installBtn=document.getElementById('installBtn');
 if('serviceWorker' in navigator){
+  var _swRecargando=false;
+  /* Cuando el Service Worker nuevo toma control, recarga una sola vez
+     para mostrar la versión recién publicada (sin bucles). */
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(_swRecargando) return;
+    _swRecargando=true;
+    window.location.reload();
+  });
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('./sw.js').catch(function(err){console.log('SW Error: ',err);});
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      /* Busca si hay una versión nueva cada vez que se abre la tienda. */
+      try{ reg.update(); }catch(e){}
+      reg.addEventListener('updatefound',function(){
+        var nuevo=reg.installing;
+        if(!nuevo) return;
+        nuevo.addEventListener('statechange',function(){
+          /* Hay versión nueva lista y ya había una activa: actívala. */
+          if(nuevo.state==='installed' && navigator.serviceWorker.controller){
+            nuevo.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+    }).catch(function(err){console.log('SW Error: ',err);});
   });
 }
 window.addEventListener('beforeinstallprompt',function(e){
