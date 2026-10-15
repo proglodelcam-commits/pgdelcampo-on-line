@@ -1407,7 +1407,7 @@ if(installBtn){
 
 <!-- Script: ChatBot BotsPG -->
 <script>
-var WEB_APP_URL="https://script.google.com/macros/s/AKfycbzNOlNPvW6g1NYqi9Ra0iErNJU5ijt5HvJTy88tZhyrmaFeuD-9tS274y17yp8SiH1c/exec";
+var WEB_APP_URL="https://script.google.com/macros/s/AKfycbwoyfQoI6a92QGt5BXlERybT7ujEa9kzolKbcSdIIvGehlbVWtK0ftq240xEzsuqEbs/exec";
 function toggleChatBot(){
   var win=document.getElementById('chatbot-window');
   win.style.display=(win.style.display==='flex')?'none':'flex';
@@ -1430,11 +1430,10 @@ async function enviarMensaje(){
   historial.appendChild(msgCarga);
   historial.scrollTop=historial.scrollHeight;
   try{
-    var contexto=(typeof window.pgContextoTienda==='function')?window.pgContextoTienda():'';
     var response=await fetch(WEB_APP_URL,{
       method:"POST",
       headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify({mensaje:mensaje,contexto:contexto})
+      body:JSON.stringify({mensaje:mensaje})
     });
     var datos=await response.json();
     if(datos&&datos.respuesta){
@@ -1502,46 +1501,11 @@ function startSync(){
   onValue(ref(db,'productos'),s=>{productos=s.val()||{};render()});
   /* Por seguridad NO se suscribe a todo el nodo 'clientes' (datos privados de todos). Se consulta por telefono bajo demanda en cliente() y saveTransaction(). */
   onValue(ref(db,'anuncios'),s=>{renderCarrusel(s.val()||{})});
-  onValue(ref(db,'config/empresa'),s=>{var e=s.val()||{};window.__pgEmpresa=e;renderHorario(e);renderEmpresa(e);if(e.chatbotUrl&&/^https?:\/\//i.test(e.chatbotUrl))window.WEB_APP_URL=e.chatbotUrl;});
+  onValue(ref(db,'config/empresa'),s=>{var e=s.val()||{};renderHorario(e);renderEmpresa(e)});
   /* Siembra automática del catálogo si la nube está vacía */
   get(ref(db,'productos')).then(s=>{ if(!s.exists()||!Object.keys(s.val()||{}).length){ set(ref(db,'productos'),SEED_PRODUCTOS); } }).catch(()=>{});
 }
 /* Autenticación anónima antes de tocar la base de datos (requerida por las reglas). */
-
-/* ── Base de conocimiento para el ChatBot (datos vivos de la tienda) ──
-   Construye un resumen de texto con el catálogo, los datos de la empresa y
-   la sección de Asesoría. El bot lo envía como "contexto" en cada mensaje. */
-window.pgContextoTienda=function(){
-  try{
-    var out=[];
-    var e=window.__pgEmpresa||{};
-    out.push('NEGOCIO: '+(e.nombre||'Productos Globales del Campo (PG del Campo)'));
-    if(e.lugar) out.push('Ubicacion: '+e.lugar);
-    if(e.tel) out.push('Telefono: '+e.tel);
-    if(e.whatsapp) out.push('WhatsApp: +505 '+e.whatsapp);
-    if(Array.isArray(e.horarios)&&e.horarios.length){ out.push('Horarios: '+e.horarios.map(function(h){return h.dia+' '+h.horario;}).join('; ')); }
-    if(e.envio) out.push('Envios: '+String(e.envio).replace(/\s+/g,' ').trim());
-    if(e.pagoEntrega) out.push('Pago contra entrega: '+String(e.pagoEntrega).replace(/\s+/g,' ').trim());
-    if(e.pagoCheque) out.push('Pago con cheque: '+String(e.pagoCheque).replace(/\s+/g,' ').trim());
-    if(e.banco) out.push('Pago por transferencia: '+e.banco+(e.cuenta?(' Cta '+e.cuenta):'')+(e.ach?(' ACH '+e.ach):''));
-    if(e.mision) out.push('Mision: '+String(e.mision).replace(/\s+/g,' ').trim());
-    if(e.vision) out.push('Vision: '+String(e.vision).replace(/\s+/g,' ').trim());
-    if(e.enlaceKyte) out.push('Tienda en linea: '+e.enlaceKyte);
-    /* Catalogo vivo desde Firebase */
-    var items=Object.keys(productos||{}).map(function(k){return productos[k];}).filter(function(p){return p&&p.visible!==false;});
-    if(items.length){
-      out.push('CATALOGO ('+items.length+' productos):');
-      items.forEach(function(p){
-        var disp=(p.controla_stock===false)?'disponible':((Number(p.stock||0)>0)?'disponible':'agotado');
-        out.push('- '+(p.nombre||'Producto')+': '+M(p.precio)+(p.categoria?(' | '+p.categoria):'')+' | '+disp+(p.puntos?(' | '+p.puntos+' pts fidelidad'):''));
-      });
-    }
-    /* Seccion Asesoria Digital (texto de la pagina) */
-    var as=document.getElementById('asesoria');
-    if(as){ var t=(as.innerText||as.textContent||'').replace(/\s+/g,' ').trim(); if(t) out.push('ASESORIA / GUIA: '+t.slice(0,2000)); }
-    return out.join('\n');
-  }catch(err){ return ''; }
-};
 let _syncStarted=false;
 onAuthStateChanged(_auth,u=>{ if(u&&!_syncStarted){ _syncStarted=true; startSync(); } });
 signInAnonymously(_auth).catch(e=>{ console.warn('Auth anónima falló',e); if(!_syncStarted){ _syncStarted=true; startSync(); } });
