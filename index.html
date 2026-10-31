@@ -1428,14 +1428,7 @@ if(installBtn){
 
 <!-- Script: ChatBot BotsPG -->
 <script>
-/* URL del cerebro del chat.
-   Recomendado: dejarlo vacío aquí y configurarlo desde el Panel-Admin en
-   config/empresa/chatbotUrl (la Tienda lo toma solo). Debe apuntar al
-   endpoint /chat-web del Agente PG del Campo, por ejemplo:
-   https://pg-del-campo-agente.onrender.com/chat-web */
-window.WEB_APP_URL=window.WEB_APP_URL||"https://pg-del-campo-agente.onrender.com/chat-web";
-/* Id de sesión por navegador para que el agente recuerde la conversación. */
-window.PG_CHAT_SESION=(function(){try{var k='pg_chat_sesion';var v=localStorage.getItem(k);if(!v){v='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem(k,v);}return v;}catch(e){return 's'+Date.now();}})();
+window.WEB_APP_URL=window.WEB_APP_URL||"https://script.google.com/macros/s/AKfycbzNOlNPvW6g1NYqi9Ra0iErNJU5ijt5HvJTy88tZhyrmaFeuD-9tS274y17yp8SiH1c/exec";
 function toggleChatBot(){
   var win=document.getElementById('chatbot-window');
   win.style.display=(win.style.display==='flex')?'none':'flex';
@@ -1459,14 +1452,10 @@ async function enviarMensaje(){
   historial.scrollTop=historial.scrollHeight;
   try{
     var contexto=(typeof window.pgContextoTienda==="function")?window.pgContextoTienda():"";
-    /* Si el cliente ya puso su WhatsApp en el carrito, lo mandamos para que el
-       agente pueda leer/actualizar sus estrellas y pedidos. */
-    var telEl=document.getElementById("cliente-tel");
-    var tel=(telEl&&telEl.value)?telEl.value.replace(/[^0-9]/g,""):"";
     var response=await fetch(window.WEB_APP_URL,{
       method:"POST",
       headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify({mensaje:mensaje,contexto:contexto,sesion:window.PG_CHAT_SESION,tel:tel})
+      body:JSON.stringify({mensaje:mensaje,contexto:contexto})
     });
     var datos=await response.json();
     if(datos&&datos.respuesta){
@@ -1475,7 +1464,7 @@ async function enviarMensaje(){
       msgCarga.innerHTML="Disculpa, tuvimos un inconveniente al procesar la respuesta. Por favor, intenta de nuevo.";
     }
   }catch(error){
-    msgCarga.innerHTML="<b>Aviso de conexi\u00f3n:</b> No se logr\u00f3 enlazar con el agente. Por favor verifica la publicaci\u00f3n.";
+    msgCarga.innerHTML="<b>Aviso de conexi\u00f3n:</b> No se logr\u00f3 enlazar con el puente de Jinotepe. Por favor verifica la publicaci\u00f3n.";
   }
   btn.disabled=false;
   historial.scrollTop=historial.scrollHeight;
